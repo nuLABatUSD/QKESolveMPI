@@ -18,8 +18,10 @@ class collisions{
         collisions(int, int, linspace_and_gl*);
         ~collisions();
         
+        int get_load_value();
+        
         void compute_R(double, double, double*);
-        void C(density*, density*, bool);
+        void C(density*, density*, bool=true);
 };
 
 

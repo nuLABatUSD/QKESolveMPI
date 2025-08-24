@@ -44,12 +44,19 @@ class ODESolve
         int total_ODE_steps;
         int total_ODE_rejected_steps;
 
+        double eps = 1e-8; 
+        double TINY = 1e-22;
+        double Safety = 0.9;
         
     public:
         ODESolve();
         ~ODESolve();
         
         int get_rejected_steps();
+        
+        void set_tolerance(double);
+        void set_tiny(double);
+        void set_safety(double);
         
         void set_ics(double, dep*, double);
         void print_state();
@@ -96,6 +103,18 @@ void ODESolve<dep>::set_ics(double x0, dep* y0, double dx0)
 template <class dep>
 int ODESolve<dep>::get_rejected_steps()
 {   return total_ODE_rejected_steps; }
+
+template <class dep>
+void ODESolve<dep>::set_tolerance(double tol)
+{   eps = tol;}
+
+template <class dep>
+void ODESolve<dep>::set_tiny(double sm)
+{   TINY = sm;}
+
+template <class dep>
+void ODESolve<dep>::set_safety(double s)
+{   Safety = s;}
 
 template <class dep>
 void ODESolve<dep>::print_state()

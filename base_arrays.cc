@@ -18,6 +18,9 @@ int array::get_length()
 int array::get_len()
 {   return get_length();}
 
+int array::length()
+{   return get_length();}
+
 void array::set_value(int i, double v)
 {   values[i] = v;}
 

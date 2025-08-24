@@ -42,6 +42,9 @@ collisions::~collisions(){
     }
 }
 
+int collisions::get_load_value()
+{   return load_value;}
+
 /**************************
 
 results is an array of length 4 * N_bins
@@ -87,4 +90,41 @@ void collisions::compute_R(double Tcm, double T, double* result){
         result[i] = out_vals[i];
     
     delete[] out_vals;
+}
+
+void collisions::C(density* dens, density* output, bool net){
+       double* out_vals = new double[8 * N_bins]();
+       double my_ans = 0.;
+       int sender, tag;
+       MPI_Status status;
+       
+       double dummy_int[4];
+       
+       if(myid == 0){
+           for(int i = 0; i < N_bins * 2; i++){
+               MPI_Recv(dummy_int, 4, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+               sender = status.MPI_SOURCE;
+               tag = status.MPI_TAG;
+               
+               for(int j = 0; j < 4; j++)
+                   out_vals[4 * tag + j] = dummy_int[j];
+           }
+       }
+       else{
+           for(int j = 0; j < num_integrators; j++){
+               tag = integrators[j]->get_bin();
+               if(!integrators[j]->is_neutrino())
+                   tag += N_bins;
+               integrators[j]->whole_integral(dens, dummy_int, net);
+               MPI_Send(dummy_int, 4, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
+           }
+       }
+       
+       MPI_Bcast(out_vals, 8 * N_bins, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+       
+       for(int i = 0; i < 8 * N_bins; i++)
+           output->set_value(i, out_vals[i]);
+       
+       delete[] out_vals;
+ 
 }

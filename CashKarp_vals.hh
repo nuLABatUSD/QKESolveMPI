@@ -1,3 +1,6 @@
+#ifndef _CASHKARP_VALS_HH_
+#define _CASHKARP_VALS_HH_
+
 const double a2 = 0.2;
 const double a3 = 0.3;
 const double a4 = 0.6;
@@ -30,3 +33,5 @@ const double cstar3 = 0.38390790343915343;
 const double cstar4 = 0.24459273726851852;
 const double cstar5 = 0.019321986607142856;
 const double cstar6 = 0.25;
+
+#endif

@@ -38,6 +38,7 @@ class array{
         double get_value(int);
         int get_length();
         int get_len();
+        int length();
         
         void set_value(int, double);
         
