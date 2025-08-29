@@ -432,7 +432,7 @@ bool QKEMPI::ODEOneRun(int N_step, int dN, double x_final, const std::string& fi
             cout << endl << "Time elapsed: "
              << duration.count()/1000. << " seconds" << endl;
             cout << "steps rejected / total steps = " << total_ODE_rejected_steps << " / " << total_ODE_steps << " (" << (100 * total_ODE_rejected_steps) / (total_ODE_rejected_steps+total_ODE_steps) << "%)" << endl;
-            cout << "First derivative rejected " << just_h->get_rejected_steps() << "steps without collisions" << endl;
+            cout << "First derivative rejected " << just_h->get_rejected_steps() << " steps without collisions" << endl;
         }
         
         if(print_csv_file)
