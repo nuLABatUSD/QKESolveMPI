@@ -569,7 +569,7 @@ double nu_nu_collision::interior_integral(int p2, int which_term){
     inner_vals[p2]->zeros();
     
     for(int p3 = 0; p3 < inner_vals[p2]->get_length(); p3++)
-        inner_vals[p2]->set_value(p2, 0.25 * J(eps_value, outer_dummy_vars->get_value(p2), inner_dummy_vars[p2]->get_value(p3)) * F_values[which_term][p2][p3]
+        inner_vals[p2]->set_value(p3, 0.25 * J(eps_value, outer_dummy_vars->get_value(p2), inner_dummy_vars[p2]->get_value(p3)) * F_values[which_term][p2][p3]
                                     + 0.125 * K(eps_value, outer_dummy_vars->get_value(p2), inner_dummy_vars[p2]->get_value(p3)) * F_values[which_term+4][p2][p3]);
     
     return inner_dummy_vars[p2]->integrate(inner_vals[p2]);

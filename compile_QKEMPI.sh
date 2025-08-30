@@ -14,7 +14,7 @@ N_step="200"
 dN="1"
 x_initial="0."
 x_final="5.e20"
-dx_initial="1.e18"
+dx_initial="1.e13"
 
 rm run_params.hh
 
