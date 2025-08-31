@@ -14,6 +14,10 @@ class collisions{
         
         int load_value;
         
+        int max_worker_bins;
+        int** worker_values;
+        int** worker_result_indexes;
+        
     public:
         collisions(int, int, linspace_and_gl*);
         ~collisions();
