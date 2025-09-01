@@ -47,6 +47,9 @@ class density : public dep_vars
     
     void set_T(double);
     void set_T_Tcm(double, double);
+    using array::set_value;
+    void set_value(int, bool, int, double);
+    
     double p0(int, bool);
     void p_vector(int, bool, three_vector*);
     void p0_p(int, bool, three_vector*);

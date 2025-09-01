@@ -3,6 +3,7 @@
 
 #include "arrays.hh"
 #include "density.hh"
+#include "matrices.hh"
 
 #include <iostream>
 
@@ -10,6 +11,7 @@ using std::cout;
 using std::endl;
 
 const double _COMPUTE_R_ERROR_ = -999.;
+const double tolerance_min_rate = 100.;
 
 class collision_integral{
     protected:
@@ -28,6 +30,8 @@ class collision_integral{
         int num_F;
         double*** F_values;
         
+        double min_rate;
+        
     public:
         collision_integral(int, linspace_and_gl*, bool); //(int bin, dummy_vars* eps);
         virtual ~collision_integral();
@@ -45,6 +49,23 @@ class collision_integral{
         virtual void whole_integral(density*, double*, bool) = 0; //density* dens, double* results, bool net
         
         virtual void compute_R(double, double, double*) = 0;
+        void set_min_rate(density*);
+        double get_min_rate();
+};
+
+class electron_collision_integral : public collision_integral{
+    protected:
+        dep_vars* outer_vals_2;
+        dummy_vars* outer_dummy_vars_2;
+        
+        dep_vars** inner_vals_2;
+        dummy_vars** inner_dummy_vars_2;
+    
+        matrix* G_L;
+        matrix* G_R;
+    public:
+        electron_collision_integral(int, linspace_and_gl*, bool);
+        virtual ~electron_collision_integral();
 };
 
 class nu_nu_collision : public collision_integral{
@@ -79,6 +100,11 @@ class nu_nu_collision : public collision_integral{
         void Fvvbarsc_for_p1(density*, bool);
 };
 
+class nu_e_collision : public electron_collision_integral{
+    public:
+        nu_e_collision(int, linspace_and_gl*, bool);
+        ~nu_e_collision();
+};
 
 double J1(double, double, double);
 double J2(double, double);

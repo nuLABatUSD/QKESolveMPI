@@ -64,7 +64,7 @@ collisions::collisions(int rank, int num_ranks, linspace_and_gl* e){
 }
 
 collisions::~collisions(){
-    if(myid == 0){
+/*    if(myid == 0){
         for(int i = 1; i < numprocs; i++){
             cout << i << ", " ;
             for(int j = 0; j < worker_values[i][0]; j++)
@@ -72,7 +72,7 @@ collisions::~collisions(){
             cout << endl;
         }
             
-    }
+    }*/
     delete eps;
 
     for(int i = 1; i < numprocs; i++){
@@ -147,7 +147,7 @@ void collisions::C(density* dens, density* output, bool net){
        int sender, tag;
        MPI_Status status;
        
-       double* dummy_int = new double[4*max_worker_bins]();
+/*       double* dummy_int = new double[4*max_worker_bins]();
        double dummy[4];
        
        if(myid == 0){
@@ -171,7 +171,9 @@ void collisions::C(density* dens, density* output, bool net){
            }
            MPI_Send(dummy_int, 4*max_worker_bins, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
        }
-/*       double dummy_int[4];
+*/       
+       
+       double* dummy_int = new double[4];
        
        if(myid == 0){
            for(int i = 0; i < N_bins * 2; i++){
@@ -192,11 +194,29 @@ void collisions::C(density* dens, density* output, bool net){
                MPI_Send(dummy_int, 4, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
            }
        }
-*/       
+       
        MPI_Bcast(out_vals, 8 * N_bins, MPI_DOUBLE, 0, MPI_COMM_WORLD);
        
-       for(int i = 0; i < 8 * N_bins; i++)
-           output->set_value(i, out_vals[i]);
+       
+       double P0val;
+       three_vector* Pval = new three_vector();
+       
+       for(int i = 0; i < N_bins; i++){
+           output->set_value(i, true, 0, out_vals[4 * i]);
+           output->set_value(i, false, 0, out_vals[4 * (i+N_bins)]);
+           
+           P0val = dens->p0(i, true);
+           dens->p_vector(i, true, Pval);
+           for(int j = 0; j < 3; j++)
+               output->set_value(i, true, j+1, (-out_vals[4*i] * Pval->get_value(j) + out_vals[4*i+j+1]) / P0val);
+               
+           P0val = dens->p0(i, false);
+           dens->p_vector(i, false, Pval);
+           for(int j = 0; j < 3; j++)
+               output->set_value(i, false, j+1, (-out_vals[4*(i+N_bins)] * Pval->get_value(j) + out_vals[4*(i+N_bins)+j+1]) / P0val);
+              
+       }
+       delete Pval;
        
        delete[] out_vals;
        delete[] dummy_int;

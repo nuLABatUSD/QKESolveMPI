@@ -5,6 +5,7 @@
 #include "collisionsQKE.hh"
 #include "CashKarp_vals.hh"
 #include "QKEMPI.hh"
+#include "run_params.hh"
 #include "mpi.h"
 
 #include <iostream>
@@ -20,6 +21,17 @@ using std::abs;
 
 using namespace std::chrono;
 
+#ifndef ODE_SOLVER_TOLERANCE
+#define ODE_SOLVER_TOLERANCE 1.e-8
+#endif
+
+#ifndef ODE_SOLVER_TINY
+#define ODE_SOLVER_TINY (ODE_SOLVER_TOLERANCE * 1.e-16)
+#endif
+
+#ifndef ODE_SOLVER_SAFETY
+#define ODE_SOLVER_SAFETY 0.9
+#endif
 
 QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, double dx0, linspace_and_gl* e, density* ic) {
     myid = rank;
@@ -43,9 +55,9 @@ QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, 
     
     coll_integrator = new collisions(myid, numprocs, epsilon);
     
-    tol = 1.e-8;
-    TINY = 1.e-22;
-    Safety = 0.9;
+    tol = ODE_SOLVER_TOLERANCE;
+    TINY = ODE_SOLVER_TINY;
+    Safety = ODE_SOLVER_SAFETY;
     
     total_ODE_steps = 0;
     total_ODE_rejected_steps = 0;
@@ -372,9 +384,10 @@ bool QKEMPI::ODEOneRun(int N_step, int dN, double x_final, const std::string& fi
     auto start = high_resolution_clock::now();
 
     if(myid == 0){    
-        if (print_csv_file)
-            file.open(file_name);
-
+        if (print_csv_file){
+            std::string data_filename = file_name + ".csv";
+            file.open(data_filename);
+        }
 
         if (verbose)
         {
@@ -405,6 +418,12 @@ bool QKEMPI::ODEOneRun(int N_step, int dN, double x_final, const std::string& fi
             }
             total_ODE_steps++;
             
+            if (dx_value == 0 || x_value / dx_value > 1.e9){
+                cout << "ISSUE: step size has crashed. Abort." << endl;
+                no_error = false;
+                break;
+            }
+            
             if (x_value == x_final)
             {
                 if(myid == 0){
@@ -425,7 +444,6 @@ bool QKEMPI::ODEOneRun(int N_step, int dN, double x_final, const std::string& fi
     auto duration = duration_cast<milliseconds>(stop - start);
 
     if(myid == 0){
-    
         if (verbose)
         {
             print_state();
@@ -435,8 +453,13 @@ bool QKEMPI::ODEOneRun(int N_step, int dN, double x_final, const std::string& fi
             cout << "First derivative rejected " << just_h->get_rejected_steps() << " steps without collisions" << endl;
         }
         
-        if(print_csv_file)
+        if(print_csv_file){
             file.close();
+            
+            std::string eps_filename = file_name + "-eps.csv";
+            file.open(eps_filename);
+            epsilon->print_csv(file);            
+        }
     }
     return done;
 }

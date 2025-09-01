@@ -3,6 +3,7 @@
 #include "collisionsQKE.hh"
 #include "constants.hh"
 #include "matrices.hh"
+#include "run_params.hh"
 
 #include <iostream>
 #include <cmath>
@@ -11,6 +12,7 @@ using std::cout;
 using std::endl;
 
 using std::abs;
+using std::max;
 
 collision_integral::collision_integral(int b, linspace_and_gl* e, bool nu){
     bin = b;
@@ -20,6 +22,8 @@ collision_integral::collision_integral(int b, linspace_and_gl* e, bool nu){
     neutrino = nu;
     
     eps = new linspace_and_gl(e);
+    
+    min_rate = 0.;
     
 /**********************************
 
@@ -65,6 +69,54 @@ double collision_integral::get_eps_value()
 
 bool collision_integral::is_neutrino()
 {   return neutrino;}
+
+void collision_integral::set_min_rate(density* dens){
+    double R_vals[2];
+    compute_R(dens->get_Tcm(), dens->get_T(), R_vals);
+    
+    double C_vals[4];
+    whole_integral(dens, C_vals, false);
+    
+    double c_max = max(C_vals[0], C_vals[1]);
+    for(int i = 2; i < 4; i++)
+        c_max = max(c_max, C_vals[i]);
+        
+    min_rate = max(R_vals[0], R_vals[1]) * c_max * TOLERANCE_MIN_RATE;
+}
+
+double collision_integral::get_min_rate()
+{   return min_rate;}
+
+electron_collision_integral::electron_collision_integral(int b, linspace_and_gl* e, bool nu) : collision_integral(b, e, nu){
+    complex_three_vector* A = new complex_three_vector();
+    A->set_value(2, complex<double> (0.5,0));
+    G_L = new matrix(complex<double> (_sin_squared_theta_W_,0),A);
+    delete A;
+   
+    G_R = new matrix(true);
+    G_R->multiply_by(_sin_squared_theta_W_);
+}
+
+electron_collision_integral::~electron_collision_integral(){
+    delete G_L;
+    delete G_R;
+    
+    int N_outer = outer_dummy_vars_2->get_length();
+    
+    for(int i = 0; i < N_outer; i++){
+        delete inner_dummy_vars_2[i];
+        delete inner_vals_2[i];
+    }
+        
+    delete[] inner_dummy_vars_2;
+    delete[] inner_vals_2;
+    
+    delete outer_dummy_vars_2;
+    delete outer_vals_2;
+    
+}
+
+
 
 nu_nu_collision::nu_nu_collision(int b, linspace_and_gl* e, bool nu) : collision_integral(b, e, nu){
     outer_dummy_vars = new dummy_vars(e);
@@ -658,7 +710,10 @@ void nu_nu_collision::whole_integral(density* dens, double* results, bool net){
         for(int j = 0; j < 4; j++){
             for(int p2 = 0; p2 < N_bins; p2++)
                 outer_vals->set_value(p2, interior_integral(p2, j));
+                
             results[j] = coeff * outer_dummy_vars->integrate(outer_vals);
+            if (abs(results[j]) < min_rate)
+                results[j] = 0.;
         }
     }
 }

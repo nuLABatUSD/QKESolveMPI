@@ -262,6 +262,13 @@ void density::set_T_Tcm(double T, double Tcm){
     set_Tcm(Tcm);
 }
 
+void density::set_value(int b, bool nu, int comp, double val){
+    int index = b;
+    if (nu)
+        index += N_bins;
+    set_value(4 * index + comp, val);
+}
+
 double density::p0(int t, bool neutrino){
     if(neutrino==true){
         return values[4*t];

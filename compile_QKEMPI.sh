@@ -1,45 +1,41 @@
 #!/usr/bin/bash
 
-set -x
-rm coll
+output_base=$1
+
+output_file=$(python compile_QKEMPI.py $output_base )
 
 numprocs="128"
-output_file="QKEthermal.csv"
-execute_file="execute_QKEMPI.sh"
+execute_file="execute_${output_file}.sh"
 
-sin2theta="0"
-deltamsquared="0"
+program_name="${output_file}_run"
 
-N_step="200"
-dN="1"
-x_initial="0."
-x_final="5.e20"
-dx_initial="1.e13"
+if [ -f $program_name ]; then
+    rm $program_name
+fi
 
-rm run_params.hh
+if [ -f $execute_file ]; then
+    rm $execute_file
+fi
 
-echo "#define PARAM_DELTA_M_SQUARED $deltamsquared" > run_params.hh
-echo "#define PARAM_SIN_2THETA $sin2theta" >> run_params.hh
-echo "#define PARAM_N_STEPS $N_step" >> run_params.hh
-echo "#define PARAM_DN $dN" >> run_params.hh
-echo "#define PARAM_DT_INIT $dx_initial" >> run_params.hh
-echo "#define PARAM_T_FINAL $x_final" >> run_params.hh
+mpic++ run_QKEMPI.cc QKEMPI.cc collisionsQKE_MPI.cc collisionsQKE.cc QKESolve.cc thermodynamics.cc arrays.cc base_arrays.cc density.cc matrices.cc -std=c++11 -o $program_name
 
-mpic++ run_QKEMPI.cc QKEMPI.cc collisionsQKE_MPI.cc collisionsQKE.cc QKESolve.cc thermodynamics.cc arrays.cc base_arrays.cc density.cc matrices.cc -std=c++11 -o coll
+if [ -f $program_name ]; then
+    echo "#!/bin/bash" > $execute_file
+    echo "# FILENAME: 1MeV" >> $execute_file
+    echo "#SBATCH -A phy240216" >> $execute_file
+    echo "#SBATCH --nodes=1" >> $execute_file
+    echo "#SBATCH --ntasks=128" >> $execute_file
+    echo "#SBATCH -J qkesolvef" >> $execute_file
+    echo "#SBATCH -p wholenode" >> $execute_file
+    echo "#SBATCH --time=12:00:00" >> $execute_file
+    echo "#SBATCH --mail-user=ckishimoto@sandiego.edu" >> $execute_file
+    echo "#SBATCH --mail-type=all" >> $execute_file
+    
+    echo "module purge" >> $execute_file
+    echo "module load modtree/cpu" >> $execute_file
+    echo "mpiexec -n $numprocs $program_name results/${output_file}" >> $execute_file
 
-rm $execute_file
-
-echo "#!/bin/bash" > $execute_file
-echo "# FILENAME: 1MeV" >> $execute_file
-echo "#SBATCH -A phy240216" >> $execute_file
-echo "#SBATCH --nodes=1" >> $execute_file
-echo "#SBATCH --ntasks=128" >> $execute_file
-echo "#SBATCH -J qkesolvef" >> $execute_file
-echo "#SBATCH -p wholenode" >> $execute_file
-echo "#SBATCH --time=12:00:00" >> $execute_file
-echo "#SBATCH --mail-user=ckishimoto@sandiego.edu" >> $execute_file
-echo "#SBATCH --mail-type=all" >> $execute_file
-
-echo "module purge" >> $execute_file
-echo "module load modtree/cpu" >> $execute_file
-echo "mpiexec -n $numprocs coll \"$output_file\" " >> $execute_file
+    cp run_params.hh "results/${output_file}_params.hh"
+    
+    echo "Ready to run: sbatch ${execute_file}"
+fi
