@@ -2,7 +2,7 @@
 
 output_base=$1
 
-output_file=$(python compile_QKEMPI.py $output_base )
+output_file=$(python3 compile_QKEMPI.py $output_base )
 
 numprocs="128"
 execute_file="execute_${output_file}.sh"
