@@ -156,10 +156,10 @@ double QKEMPI::first_derivative(double t, density* d1, density* der, double dx, 
 }
 
 
-void QKEMPI::RKCash_Karp(double x, density* y, double dx, double* x_stepped, density* y_5th, density* y_4th)
+void QKEMPI::RKCash_Karp(double x, density* y, double dx_try, double* x_stepped, density* y_5th, density* y_4th)
 {
     // k1 = dx * f(x, y)
-    dx = first_derivative(x, y, k1, dx, x_stepped);
+    double dx = first_derivative(x, y, k1, dx_try, x_stepped);
     k1 -> multiply_by(dx);  //k1 = dx * f(x,y)
   
     // k2 = dx * f(x + a2*dx, y + b21*k1)
@@ -332,7 +332,7 @@ bool QKEMPI::RKCK_step(double x, density* y, double dx, double* x_next, density*
     for (int i = 0; i<10; i++){
         RKCash_Karp(x, y, dx_try, x_next, y5, y4);
         
-        if (step_accept(y, y5, y4, dx_try, dx_next)){
+        if (step_accept(y, y5, y4, (*x_next-x), dx_next)){
             y_next -> copy(y5);
             accept = true;
             break;
