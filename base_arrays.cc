@@ -1,4 +1,5 @@
 #include "base_arrays.hh"
+#include "arrays.hh"
 
 #include <iostream>
 #include <cmath>
@@ -12,6 +13,14 @@ array::array(int N_values)
 
 double array::get_value(int i)
 {   return values[i];}
+
+double array::get_value_from_end(int i)
+{   
+    if(i < 1){
+        cout << "ERROR: in get_value_from_end attempting to access a non-positive element, i = " << i << endl;
+        return 0.;
+    }
+    return values[N-i];}
 
 int array::get_length()
 {    return N;}
@@ -71,15 +80,23 @@ dummy_vars::dummy_vars(dummy_vars* copy_me) : array(copy_me->get_length())
 }
 
 dummy_vars::~dummy_vars(){
-    delete[] values;
-    delete[] weights;
+    if(N != -1){
+        delete[] values;
+        delete[] weights;
+    }
 }
 
 double dummy_vars::get_weight(int i)
 { return weights[i]; }
 
+double dummy_vars::get_weight_from_end(int i)
+{   return weights[N-i];}
+
 double dummy_vars::get_max_linspace()
 {   return max_linspace;  }
+
+double dummy_vars::get_max_value()
+{   return values[N-1];}
 
 void dummy_vars::set_weight(int i, double w)
 {weights[i] = w;}
@@ -188,8 +205,6 @@ void dummy_vars::print_csv(ostream& os)
         os << weights[i] << ", ";
     os << weights[N-1];
 }
-
-
 
 
 

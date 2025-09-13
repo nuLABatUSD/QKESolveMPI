@@ -5,6 +5,8 @@
 
 #include "base_arrays.hh"
 
+#define INNER_INTEGRAL_INFINITY -999.
+
 class dummy_vars;
 class dep_vars;
 class complex_three_vector;
@@ -47,6 +49,19 @@ class linspace_for_trap : public linspace_and_gl
         linspace_for_trap(linspace_for_trap*);
 };
 
+class sub_dummy_vars : public dummy_vars{
+    protected:
+        bool* need_interpolation;
+        int* interpolation_indices;
+        
+    public:
+        sub_dummy_vars(dummy_vars*, double, double, int=0);
+        sub_dummy_vars(dummy_vars*);
+        ~sub_dummy_vars();
+        
+        bool get_need_interp(int);
+        int get_interp_index(int);
+};
 
 class three_vector : public dep_vars
 {

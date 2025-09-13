@@ -13,6 +13,18 @@ using std::endl;
 const double _COMPUTE_R_ERROR_ = -999.;
 const double tolerance_min_rate = 100.;
 
+#ifndef ELIM_VALUES
+#define ELIM_VALUES
+
+#define EPS_CUT_1 0
+#define EPS_CUT_2 5
+#define EPS_CUT_3 1
+#define EPS_TRANS_2 2
+#define EPS_LIM_1 3
+#define EPS_LIM_2 4
+
+#endif
+
 class collision_integral{
     protected:
         int bin, p1, N_bins;
@@ -55,17 +67,25 @@ class collision_integral{
 
 class electron_collision_integral : public collision_integral{
     protected:
+        double Tcm, scaled_me, me_squared;
+        
         dep_vars* outer_vals_2;
         dummy_vars* outer_dummy_vars_2;
         
         dep_vars** inner_vals_2;
         dummy_vars** inner_dummy_vars_2;
-    
+        
         matrix* G_L;
         matrix* G_R;
     public:
-        electron_collision_integral(int, linspace_and_gl*, bool);
+        electron_collision_integral(int, linspace_and_gl*, bool, double);
         virtual ~electron_collision_integral();
+        
+        double mom_to_eps(double);
+        double eps_to_mom(double);
+        
+        double get_Tcm();
+        void set_Tcm(double);
 };
 
 class nu_nu_collision : public collision_integral{
@@ -102,8 +122,24 @@ class nu_nu_collision : public collision_integral{
 
 class nu_e_collision : public electron_collision_integral{
     public:
-        nu_e_collision(int, linspace_and_gl*, bool);
+        nu_e_collision(int, linspace_and_gl*, bool, double);
         ~nu_e_collision();
+
+        int estimate_load();
+        
+        void populate_F(density*, bool); 
+        double interior_integral(int, int); 
+        void whole_integral(density*, double*, bool); 
+        
+        void compute_R(double, double, double*);
+        
+        void epslim_R1(double, double*);
+        void epslim_R2(double, double*);
+        
+        void F_LL_F_RR(density*, double*, three_vector*, bool);
+        void F_LL_RR_for_p1(density*, bool);
+        
+        void F_LR_RL_for_p1(density*, bool);
 };
 
 double J1(double, double, double);

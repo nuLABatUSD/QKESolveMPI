@@ -1,4 +1,5 @@
 #include "arrays.hh"
+#include "base_arrays.hh"
 #include "density.hh"
 #include "collisionsQKE.hh"
 #include "constants.hh"
@@ -87,7 +88,12 @@ void collision_integral::set_min_rate(density* dens){
 double collision_integral::get_min_rate()
 {   return min_rate;}
 
-electron_collision_integral::electron_collision_integral(int b, linspace_and_gl* e, bool nu) : collision_integral(b, e, nu){
+electron_collision_integral::electron_collision_integral(int b, linspace_and_gl* e, bool nu, double T_cm) : collision_integral(b, e, nu){
+    Tcm = T_cm;
+
+    scaled_me = _electron_mass_ / Tcm;
+    me_squared = scaled_me * scaled_me;
+
     complex_three_vector* A = new complex_three_vector();
     A->set_value(2, complex<double> (0.5,0));
     G_L = new matrix(complex<double> (_sin_squared_theta_W_,0),A);
@@ -116,7 +122,23 @@ electron_collision_integral::~electron_collision_integral(){
     
 }
 
+double electron_collision_integral::get_Tcm()
+{   return Tcm;}
 
+void electron_collision_integral::set_Tcm(double T_cm)
+{   Tcm = T_cm;}
+
+double electron_collision_integral::mom_to_eps(double q){
+    return sqrt(q*q + me_squared);
+}
+
+double electron_collision_integral::eps_to_mom(double e){
+    if(e < scaled_me){
+        cout << "ERROR: TRYING TO USE ELECTRON ENERGY LESS THAN MASS" << endl;
+        return -1.;
+    }
+    return sqrt(e*e - me_squared);
+}
 
 nu_nu_collision::nu_nu_collision(int b, linspace_and_gl* e, bool nu) : collision_integral(b, e, nu){
     outer_dummy_vars = new dummy_vars(e);
@@ -737,5 +759,158 @@ void nu_nu_collision::compute_R(double Tcm, double T, double* results){
     
     delete thermal;
 }
+
+
+nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) : electron_collision_integral(b, e, nu, T_cm){
+    num_F = 4;
+    F_values = new double**[4*num_F];
+
+    int N_outer = 50;
+    outer_dummy_vars = new gl_dummy_vars(N_outer, 0.);
+    outer_vals = new dep_vars(N_outer);
+    
+    inner_dummy_vars = new dummy_vars*[N_outer];
+    inner_vals = new dep_vars*[N_outer];
+    
+    double epslim[5];
+    double eps2, eps_low_lim, p4_low, p4_high;
+    
+    int count_min, count_max, p4_len;
+    
+    int bot_shift, top_shift;
+    
+    interpolation_indices = new int**[2];
+    
+    interpolation_indices[0] = new int*[N_outer];
+    
+    for(int i = 0; i < N_outer; i++){
+        epslim_R1(outer_dummy_vars->get_value(i), epslim);
+        eps2 = mom_to_eps(outer_dummy_vars->get_value(i));
+        
+        eps_low_lim = scaled_me;
+        if(eps_value < 0.5 * scaled_me && eps2 > epslim[EPS_CUT_1])
+            eps_low_lim = epslim[EPS_LIM_2];
+            
+        p4_low = eps_value + eps2 - epslim[EPS_LIM_1];
+        p4_high = eps_value + eps2 - eps_low_lim;
+        
+        inner_dummy_vars[i] = eps->new_inner_dummy_vars(p4_low, p4_high);
+        
+        
+
+        inner_vals[i] = new dep_vars(inner_dummy_vars[i]->get_length());
+        
+        for(int j = 0; j < 8; j++){
+            F_values[j] = new double*[N_outer];
+            for(int k = 0; k < N_outer; k++)
+                F_values[j][k] = new double[inner_vals[i]->get_length()]();
+        }
+    }
+    
+    outer_dummy_vars_2 = new gl_dummy_vars(N_outer, 0.);
+    outer_vals_2 = new dep_vars(N_outer);
+    
+    inner_dummy_vars_2 = new dummy_vars*[N_outer];
+    inner_vals_2 = new dep_vars*[N_outer];
+    
+    double epslim_2[6];
+    double eps3;
+    
+    for(int i = 0; i < N_outer; i++){
+        epslim_R2(outer_dummy_vars_2->get_value(i), epslim_2);
+        eps3 = mom_to_eps(outer_dummy_vars_2->get_value(i));
+        
+        eps_low_lim = 0.;
+        if(eps3 > epslim_2[EPS_CUT_2])
+            eps_low_lim = epslim_2[EPS_LIM_2];
+
+        p4_low = eps_value + eps_low_lim - eps3;
+        
+        if(eps_value < 0.5 * scaled_me && eps3 < epslim_2[EPS_CUT_1])
+            p4_high = eps_value + epslim_2[EPS_LIM_1] - eps3;
+        else
+            p4_high = INNER_INTEGRAL_INFINITY;
+
+        if(p4_high == INNER_INTEGRAL_INFINITY)
+            inner_dummy_vars_2[i] = eps->new_inner_dummy_vars_infinite(p4_low, eps->get_num_gl());
+        else
+            inner_dummy_vars_2[i] = eps->new_inner_dummy_vars(p4_low, p4_high);
+            
+        inner_vals_2[i] = new dep_vars(inner_dummy_vars_2[i]->get_length());
+        
+        for(int j = 8; j < 16; j++){
+            F_values[j] = new double*[N_outer];
+            for(int k = 0; k < N_outer; k++)
+                F_values[j][k] = new double[inner_vals_2[i]->get_length()]();
+        }
+    }
+}
+
+void nu_e_collision::epslim_R1(double q2, double* eps_lim){
+    double eps_cut_1, eps_cut_3, eps_trans_2, eps_lim_1, eps_lim_2;
+    eps_cut_1 = scaled_me + 2 * eps_value * eps_value / (scaled_me - 2 * eps_value);
+    eps_cut_3 = sqrt(eps_value*eps_value + me_squared);
+
+    double eps2 = mom_to_eps(q2);
+
+    eps_trans_2 = 0.5*(2 * eps_value + eps2 - q2 + me_squared/(2*eps_value + eps2 - q2));
+    eps_lim_1 = 0.5 * (2 * eps_value + eps2 + q2 + me_squared / (2 * eps_value + eps2 + q2));
+    eps_lim_2 = eps_trans_2;
+
+    eps_lim[EPS_CUT_1] = eps_cut_1;
+    eps_lim[EPS_CUT_3] = eps_cut_3;
+    eps_lim[EPS_TRANS_2] = eps_trans_2;
+    eps_lim[EPS_LIM_1] = eps_lim_1;
+    eps_lim[EPS_LIM_2] = eps_lim_2;
+}
+
+void nu_e_collision::epslim_R2(double q3, double* eps_lim){
+    double eps_cut_1, eps_cut_2, eps_cut_3, eps_trans_2, eps_lim_1, eps_lim_2;
+
+    eps_cut_1 = eps_value + me_squared / (4 * eps_value);
+    eps_cut_2 = eps_value + scaled_me * (eps_value + scaled_me) / (2 * eps_value + scaled_me);
+    eps_cut_3 = mom_to_eps(eps_value);
+    
+    double eps3 = mom_to_eps(q3);
+
+    eps_trans_2 = 0.5 * (eps3 + q3 - 2 * eps_value + me_squared / (eps3 + q3 - 2 * eps_value));
+    
+    eps_lim_1 = 0.5 * (eps3 - q3 - 2 * eps_value + me_squared / (eps3 - q3 - 2 * eps_value));
+    eps_lim_2 = eps_trans_2;
+    
+    eps_lim[EPS_CUT_1] = eps_cut_1;
+    eps_lim[EPS_CUT_2] = eps_cut_2;
+    eps_lim[EPS_CUT_3] = eps_cut_3;
+    eps_lim[EPS_TRANS_2] = eps_trans_2;
+    eps_lim[EPS_LIM_1] = eps_lim_1;
+    eps_lim[EPS_LIM_2] = eps_lim_2;
+}
+
+int nu_nu_collision::estimate_load(){
+    int iter = 0;
+    
+    for(int i = 0; i < outer_dummy_vars->get_length(); i++)
+        iter += inner_dummy_vars[i]->get_length() * 11;
+        
+    for(int i = 0; i < outer_dummy_vars_2->get_length(); i++)
+        iter += inner_dummy_vars_2[i]->get_length() * 11;
+        
+    return iter;
+}
+
+void nu_e_collision::populate_F(density* dens, bool net){
+    F_LL_RR_for_p1(dens, net);
+    F_LR_RL_for_p1(dens, net);
+}
+
+void nu_e_collision::F_LL_RR_for_p1(density* dens, bool net){
+    double F0 = 0.;
+    three_vector* Fxyz = new three_vector();
+    
+    for(int p2 = 0; p2 < outer_dummy_vars->get_length(); p2++)
+}
+
+
+
 
 
