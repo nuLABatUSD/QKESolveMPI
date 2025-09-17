@@ -37,7 +37,7 @@ class collision_integral{
         dummy_vars* outer_dummy_vars;
         
         dep_vars** inner_vals;
-        dummy_vars** inner_dummy_vars;
+        sub_dummy_vars** inner_dummy_vars;
         
         int num_F;
         double*** F_values;
@@ -59,6 +59,9 @@ class collision_integral{
         virtual void populate_F(density*, bool) = 0; //density* dens, bool net
         virtual double interior_integral(int, int) = 0; //int p2, int which_term
         virtual void whole_integral(density*, double*, bool) = 0; //density* dens, double* results, bool net
+        
+        void get_inner_matrix(density*, double, sub_dummy_vars*, int, bool, matrix*, bool);
+        void get_inner_matrix(density*, double, int, int, bool, matrix*, bool);
         
         virtual void compute_R(double, double, double*) = 0;
         void set_min_rate(density*);
@@ -86,11 +89,16 @@ class electron_collision_integral : public collision_integral{
         
         double get_Tcm();
         void set_Tcm(double);
+        
+        using collision_integral::get_inner_matrix;
+        void get_inner_matrix(density*, double, int, int, bool, matrix*, bool, bool);
 };
 
 class nu_nu_collision : public collision_integral{
     protected:
-        int** interpolation_indices;
+        sub_dummy_vars** p4_values;
+    
+//        int** interpolation_indices;
         
         const int load_factor = 4 + 4; // Fvvsc plus Fvvbarsc
     public:

@@ -88,6 +88,29 @@ void collision_integral::set_min_rate(density* dens){
 double collision_integral::get_min_rate()
 {   return min_rate;}
 
+void collision_integral::get_inner_matrix(density* dens, double nrg, sub_dummy_vars* sdv, int inner_index, bool nu, matrix* result, bool use_matrix){ 
+    if(sdv->get_need_interp(inner_index)){
+        three_vector* A = new three_vector();
+        double A0 = dens->interpolated_matrix(nu, sdv->get_interp_index(inner_index), nrg, A);
+        if(use_matrix)
+            result->convert_p_to_matrix(A0, A);
+        else
+            result->convert_p_to_identity_minus_matrix(A0, A);
+        delete A;
+    }
+    else{
+        if(use_matrix)
+            result->convert_p_to_matrix(dens, nu, inner_index);
+        else
+            result->convert_p_to_identity_minus_matrix(dens, nu, inner_index);
+    }
+}
+
+void collision_integral::get_inner_matrix(density* dens, double nrg, int outer_index, int inner_index, bool nu, matrix* result, bool use_matrix){ 
+    get_inner_matrix(dens, nrg, inner_dummy_vars[outer_index], inner_index, nu, result, use_matrix);
+}
+
+
 electron_collision_integral::electron_collision_integral(int b, linspace_and_gl* e, bool nu, double T_cm) : collision_integral(b, e, nu){
     Tcm = T_cm;
 
@@ -140,25 +163,45 @@ double electron_collision_integral::eps_to_mom(double e){
     return sqrt(e*e - me_squared);
 }
 
+void electron_collision_integral::get_inner_matrix(density* dens, double nrg, int outer_index, int inner_index, bool nu, matrix* result, bool use_matrix, bool inner_dv1){
+    if(inner_dv1)
+        get_inner_matrix(dens, nrg, inner_dummy_vars[outer_index], inner_index, nu, results, use_matrix);
+    else
+        get_inner_matrix(dens, nrg, inner_dummy_vars_2[outer_index], inner_index, nu, results, use_matrix);    
+}
+
 nu_nu_collision::nu_nu_collision(int b, linspace_and_gl* e, bool nu) : collision_integral(b, e, nu){
     outer_dummy_vars = new dummy_vars(e);
     outer_vals = new dep_vars(N_bins);
     
-    inner_dummy_vars = new dummy_vars*[N_bins];
+    inner_dummy_vars = new sub_dummy_vars*[N_bins];
     inner_vals = new dep_vars*[N_bins];
 
     interpolation_indices = new int*[N_bins];
+    
+    p4_values = new sub_dummy_vars*[N_bins];    
 
     num_F = 2;
     F_values = new double**[4*num_F];
     for(int j = 0; j < 4*num_F; j++)
         F_values[j] = new double*[N_bins];
 
+    int p4_len;
     for(int i = 0; i < N_bins; i++){
-        inner_dummy_vars[i] = new dummy_vars(e);
+        inner_dummy_vars[i] = new sub_dummy_vars(e);
         inner_vals[i] = new dep_vars(N_bins);
         
         interpolation_indices[i] = new int[N_bins];
+        
+        p4_len = 0;
+        for(int j = 0; j < N_bins; j++){
+            if(eps_value + outer_dummy_vars->get_value(i) - inner_dummy_vars[i]->get_value(j) >= 0)
+                p4_len++;
+            else
+                break;
+        }
+        
+        
         
         for(int j = 0; j < 4*num_F; j++)
             F_values[j][i] = new double[N_bins]();
