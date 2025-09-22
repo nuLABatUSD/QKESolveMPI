@@ -17,7 +17,7 @@ using std::max;
 collision_integral::collision_integral(int b, linspace_and_gl* e, bool nu){
     bin = b;
     p1 = bin;
-    N_bins = e->get_length();
+    N_bins = e->get_length(); 
     eps_value = e->get_value(bin);
     neutrino = nu;
     
