@@ -140,6 +140,8 @@ linspace_for_trap::linspace_for_trap(linspace_for_trap* copy_me) : linspace_and_
 { ;}
 
 sub_dummy_vars::sub_dummy_vars(dummy_vars* copy_all) : dummy_vars(copy_all){
+    orig_bins = new dummy_vars(copy_all);
+
     need_interpolation = new bool[N];
     interpolation_indices = new int[N];
     
@@ -177,11 +179,11 @@ sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, double A, double B, int N_GL) : d
     
     if (count_min < dv->get_length()){
         cout << dv->get_value(count_min) << endl;
-        if(abs(dv->get_value(count_min-1)-A) < 1.e-6){
+        if(abs(dv->get_value(count_min-1)-A) < SUBDV_INTERP_SMALL){
             count_min--;
             bot_shift = 0;
         }
-        else if(dv->get_value(count_min) - A < 1.e-6)
+        else if(dv->get_value(count_min) - A < SUBDV_INTERP_SMALL)
             bot_shift = 0;
     }
             
@@ -195,7 +197,7 @@ sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, double A, double B, int N_GL) : d
     else{
         count_max = dv->index_below_for_interpolation(B);
             cout << B - dv->get_value(count_max) << endl;
-        if(B - dv->get_value(count_max) > 1.e-6){
+        if(B - dv->get_value(count_max) > SUBDV_INTERP_SMALL){
             top_shift = 1;
         }
     
@@ -207,6 +209,8 @@ sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, double A, double B, int N_GL) : d
     weights = new double[N]();
     need_interpolation = new bool[N];
     interpolation_indices = new int[N];
+
+    orig_bins = new dummy_vars(dv);
     
     if (B == INNER_INTEGRAL_INFINITY){
         if(count_min >= dv->get_length() - N_GL){
@@ -269,12 +273,21 @@ sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, double A, double B, int N_GL) : d
             interpolation_indices[i] = dv->get_length() - i;    
         }
     }
+}
+
+sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, int num) : dummy_vars() {
+    orig_bins = new dummy_vars(dv);
+    N = num;
     
-    
+    values = new double[N]();
+    weights = new double[N]();
+    need_interpolation = new bool[N];
+    interpolation_indices = new int[N];
 }
 
 sub_dummy_vars::~sub_dummy_vars(){
     if(N!= -1){
+        delete orig_bins;
         delete[] need_interpolation;
         delete[] interpolation_indices;
     }
@@ -286,7 +299,32 @@ bool sub_dummy_vars::get_need_interp(int i)
 int sub_dummy_vars::get_interp_index(int i)
 {   return interpolation_indices[i];}
 
-
+void sub_dummy_vars::set_interp(){
+    int bin_below;
+    for(int i = 0; i < N; i++){
+        bin_below = orig_bins->index_below_for_interpolation(values[i]);
+        
+        need_interpolation[i] = true;
+        interpolation_indices[i] = bin_below;
+        
+        if(abs(values[i] - orig_bins->get_value(bin_below)) < SUBDV_INTERP_SMALL){
+            need_interpolation[i] = false;
+            interpolation_indices[i] = bin_below;
+        }
+        
+        if(bin_below -1 >= 0)
+            if(abs(values[i] - orig_bins->get_value(bin_below-1)) < SUBDV_INTERP_SMALL){
+                need_interpolation[i] = false;
+                interpolation_indices[i] = bin_below - 1;
+            }
+            
+        if(bin_below + 1 < orig_bins->get_length())
+            if(abs(values[i] - orig_bins->get_value(bin_below+1)) < SUBDV_INTERP_SMALL){
+                need_interpolation[i] = false;
+                interpolation_indices[i] = bin_below + 1;
+            }
+    }
+}
 
 
 three_vector::three_vector(int Nv):dep_vars(3)

@@ -1,3 +1,5 @@
+
+
 #ifndef _COLLISIONS_QKE_HH_
 #define _COLLISIONS_QKE_HH_
 
@@ -76,7 +78,7 @@ class electron_collision_integral : public collision_integral{
         dummy_vars* outer_dummy_vars_2;
         
         dep_vars** inner_vals_2;
-        dummy_vars** inner_dummy_vars_2;
+        sub_dummy_vars** inner_dummy_vars_2;
         
         matrix* G_L;
         matrix* G_R;
@@ -98,7 +100,7 @@ class nu_nu_collision : public collision_integral{
     protected:
         sub_dummy_vars** p4_values;
     
-//        int** interpolation_indices;
+        int** interpolation_indices;
         
         const int load_factor = 4 + 4; // Fvvsc plus Fvvbarsc
     public:
@@ -116,6 +118,8 @@ class nu_nu_collision : public collision_integral{
         double J(double, double, double);
         double K(double, double, double);
         
+        void get_p4_matrix(density*, int, int, bool, matrix*, bool);
+        
         
         void Fvvsc_components_term_1(density*, int, int, double*, three_vector*);
         void Fvvsc_components_term_2(density*, int,int, double*, three_vector*);
@@ -127,6 +131,7 @@ class nu_nu_collision : public collision_integral{
         void Fvvbarsc_components(density*, int, int, double*, three_vector*, bool);
         void Fvvbarsc_for_p1(density*, bool);
 };
+
 
 class nu_e_collision : public electron_collision_integral{
     public:
