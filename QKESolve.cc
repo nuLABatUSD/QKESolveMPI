@@ -52,7 +52,6 @@ void QKE::f(double t, density* d1, density* d2)
     double Tcm = d1->get_Tcm();
     
     double en = 0.;
-    double* integral_vals = new double[4];
     for (int i=1; i< epsilon->get_len(); i++){
         en = epsilon->get_value(i) * Tcm;
         
@@ -86,7 +85,6 @@ void QKE::f(double t, density* d1, density* d2)
     delete V_nubar;
     delete vcrossp;
     delete p;
-    delete[] integral_vals;
     
    
    

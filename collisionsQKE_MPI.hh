@@ -26,6 +26,8 @@ class collisions{
         
         void compute_R(double, double, double*);
         void C(density*, density*, bool=true);
+        double number_dens_sum_rule(density*);
+        double energy_dens_sum_rule(density*);
 };
 
 

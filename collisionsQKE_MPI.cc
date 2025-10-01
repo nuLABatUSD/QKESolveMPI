@@ -141,37 +141,12 @@ void collisions::compute_R(double Tcm, double T, double* result){
     delete[] out_vals;
 }
 
+//returns dp/dt
 void collisions::C(density* dens, density* output, bool net){
        double* out_vals = new double[8 * N_bins]();
        double my_ans = 0.;
        int sender, tag;
        MPI_Status status;
-       
-/*       double* dummy_int = new double[4*max_worker_bins]();
-       double dummy[4];
-       
-       if(myid == 0){
-           for(int i = 1; i < numprocs; i++){
-               MPI_Recv(dummy_int, 4*max_worker_bins, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-               sender = status.MPI_SOURCE;
-               tag = status.MPI_TAG;
-               
-               for(int j = 0; j < worker_values[tag][0]; j++){
-                   for(int k = 0; k < 4; k++)
-                       out_vals[4 * worker_result_indexes[tag][j] + k] += dummy_int[4*j + k];
-               }
-           }
-       }
-       else{
-           for(int j = 0; j < num_integrators; j++){
-               tag = myid;
-               integrators[j]->whole_integral(dens, dummy, net);
-               for(int k = 0; k < 4; k++)
-                   dummy_int[4*j + k] = dummy[k];
-           }
-           MPI_Send(dummy_int, 4*max_worker_bins, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
-       }
-*/       
        
        double* dummy_int = new double[4];
        
@@ -221,4 +196,91 @@ void collisions::C(density* dens, density* output, bool net){
        delete[] out_vals;
        delete[] dummy_int;
  
+}
+
+double collisions::number_dens_sum_rule(density* dens){
+    density* net_dens = new density(dens);
+    density* frs_dens = new density(dens);
+    
+    this->C(dens, net_dens, true);
+    this->C(dens, frs_dens, false);
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+    
+    dep_vars* net_neutrino_int_vals = new dep_vars(eps->get_len());
+    dep_vars* net_antineutrino_int_vals = new dep_vars(eps->get_len());
+    dep_vars* frs_neutrino_int_vals = new dep_vars(eps->get_len());
+    dep_vars* frs_antineutrino_int_vals = new dep_vars(eps->get_len());
+    
+    for(int i=0; i<eps->get_len(); i++){
+        net_neutrino_int_vals->set_value(i, pow(eps->get_value(i),2) * net_dens->get_value(4*i));
+        net_antineutrino_int_vals->set_value(i, pow(eps->get_value(i),2) * net_dens->get_value(4*i+eps->get_length()*4));
+        frs_neutrino_int_vals->set_value(i, pow(eps->get_value(i),2) * frs_dens->get_value(4*i));
+        frs_antineutrino_int_vals->set_value(i, pow(eps->get_value(i),2) * frs_dens->get_value(4*i+eps->get_length()*4));
+    }
+    
+    double net_neutrino_result = eps->integrate(net_neutrino_int_vals);
+    double net_antineutrino_result = eps->integrate(net_antineutrino_int_vals);
+    double frs_neutrino_result = eps->integrate(frs_neutrino_int_vals);
+    double frs_antineutrino_result = eps->integrate(frs_antineutrino_int_vals);
+    
+    return (net_neutrino_result + net_antineutrino_result) / (frs_neutrino_result + frs_antineutrino_result);
+}
+
+double collisions::number_dens_sum_rule(density* dens){
+    density* net_dens = new density(dens);
+    density* frs_dens = new density(dens);
+    
+    this->C(dens, net_dens, true);
+    this->C(dens, frs_dens, false);
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+    
+    dep_vars* net_neutrino_int_vals = new dep_vars(eps->get_len());
+    dep_vars* net_antineutrino_int_vals = new dep_vars(eps->get_len());
+    dep_vars* frs_neutrino_int_vals = new dep_vars(eps->get_len());
+    dep_vars* frs_antineutrino_int_vals = new dep_vars(eps->get_len());
+    
+    for(int i=0; i<eps->get_len(); i++){
+        net_neutrino_int_vals->set_value(i, pow(eps->get_value(i),2) * net_dens->get_value(4*i));
+        net_antineutrino_int_vals->set_value(i, pow(eps->get_value(i),2) * net_dens->get_value(4*i+eps->get_length()*4));
+        frs_neutrino_int_vals->set_value(i, pow(eps->get_value(i),2) * frs_dens->get_value(4*i));
+        frs_antineutrino_int_vals->set_value(i, pow(eps->get_value(i),2) * frs_dens->get_value(4*i+eps->get_length()*4));
+    }
+    
+    double net_neutrino_result = eps->integrate(net_neutrino_int_vals);
+    double net_antineutrino_result = eps->integrate(net_antineutrino_int_vals);
+    double frs_neutrino_result = eps->integrate(frs_neutrino_int_vals);
+    double frs_antineutrino_result = eps->integrate(frs_antineutrino_int_vals);
+    
+    return (net_neutrino_result + net_antineutrino_result) / (frs_neutrino_result + frs_antineutrino_result);
+}
+
+double collisions::energy_dens_sum_rule(density* dens){
+    density* net_dens = new density(dens);
+    density* frs_dens = new density(dens);
+    
+    this->C(dens, net_dens, true);
+    this->C(dens, frs_dens, false);
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+    
+    dep_vars* net_neutrino_int_vals = new dep_vars(eps->get_len());
+    dep_vars* net_antineutrino_int_vals = new dep_vars(eps->get_len());
+    dep_vars* frs_neutrino_int_vals = new dep_vars(eps->get_len());
+    dep_vars* frs_antineutrino_int_vals = new dep_vars(eps->get_len());
+    
+    for(int i=0; i<eps->get_len(); i++){
+        net_neutrino_int_vals->set_value(i, pow(eps->get_value(i),3) * net_dens->get_value(4*i));
+        net_antineutrino_int_vals->set_value(i, pow(eps->get_value(i),3) * net_dens->get_value(4*i+eps->get_length()*4));
+        frs_neutrino_int_vals->set_value(i, pow(eps->get_value(i),3) * frs_dens->get_value(4*i));
+        frs_antineutrino_int_vals->set_value(i, pow(eps->get_value(i),3) * frs_dens->get_value(4*i+eps->get_length()*4));
+    }
+    
+    double net_neutrino_result = eps->integrate(net_neutrino_int_vals);
+    double net_antineutrino_result = eps->integrate(net_antineutrino_int_vals);
+    double frs_neutrino_result = eps->integrate(frs_neutrino_int_vals);
+    double frs_antineutrino_result = eps->integrate(frs_antineutrino_int_vals);
+    
+    return (net_neutrino_result + net_antineutrino_result) / (frs_neutrino_result + frs_antineutrino_result);
 }
