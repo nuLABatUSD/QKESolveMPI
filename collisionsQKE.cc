@@ -176,8 +176,6 @@ nu_nu_collision::nu_nu_collision(int b, linspace_and_gl* e, bool nu) : collision
     
     inner_dummy_vars = new sub_dummy_vars*[N_bins];
     inner_vals = new dep_vars*[N_bins];
-
-    interpolation_indices = new int*[N_bins];
     
     p4_values = new sub_dummy_vars*[N_bins];    
 
@@ -190,8 +188,6 @@ nu_nu_collision::nu_nu_collision(int b, linspace_and_gl* e, bool nu) : collision
     for(int i = 0; i < N_bins; i++){
         inner_dummy_vars[i] = new sub_dummy_vars(e);
         inner_vals[i] = new dep_vars(N_bins);
-        
-        interpolation_indices[i] = new int[N_bins];
         
         p4_len = 0;
         for(int j = 0; j < N_bins; j++){
@@ -213,21 +209,6 @@ nu_nu_collision::nu_nu_collision(int b, linspace_and_gl* e, bool nu) : collision
         for(int j = 0; j < 4*num_F; j++)
             F_values[j][i] = new double[N_bins]();
     }
-    
-    double p2_energy;
-    double p3_energy;
-    double p4_energy;
-    
-    for(int p2=0; p2<outer_dummy_vars->get_len(); p2++){
-        p2_energy = outer_dummy_vars->get_value(p2);
-        for(int p3=0; p3<inner_dummy_vars[p2]->get_len(); p3++){
-            p3_energy = inner_dummy_vars[p2]->get_value(p3);
-            p4_energy = eps_value + p2_energy - p3_energy;
-            if(p4_energy>=0){
-                interpolation_indices[p2][p3] = eps->index_below_for_interpolation(p4_energy);            
-            }
-        }
-    }
 }
 
 nu_nu_collision::~nu_nu_collision(){
@@ -235,10 +216,6 @@ nu_nu_collision::~nu_nu_collision(){
         if(!p4_values[i])
             delete p4_values[i];
     }
-
-    for(int i = 0; i < N_bins; i++)
-        delete interpolation_indices[i];
-    delete[] interpolation_indices;
 }
 
 int nu_nu_collision::estimate_load(){
@@ -807,15 +784,25 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
     inner_dummy_vars = new sub_dummy_vars*[N_outer];
     inner_vals = new dep_vars*[N_outer];
     
-    double epslim[5];
-    double eps2, eps_low_lim, p4_low, p4_high;
+    R_elec_values = new double***[2];
+    epslim_values = new double**[2];
+    
+    for(int i = 0; i < 2; i++)
+        R_elec_values[i] = new double**[N_outer];
+    
+    double* epslim;
+    double eps2, eps3, eps_low_lim, p4_low, p4_high;
     
     int count_min, count_max, p4_len;
     
     int bot_shift, top_shift;
         
+    epslim_values[0] = new double*[N_outer];
     for(int i = 0; i < N_outer; i++){
-        epslim_R1(outer_dummy_vars->get_value(i), epslim);
+        epslim_values[0][i] = new double[5];
+        epslim_R1(outer_dummy_vars->get_value(i), epslim_values[0][i]);
+        epslim = epslim_values[0][i];
+        
         eps2 = mom_to_eps(outer_dummy_vars->get_value(i));
         
         eps_low_lim = scaled_me;
@@ -829,6 +816,17 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
 
         inner_vals[i] = new dep_vars(inner_dummy_vars[i]->get_length());
         
+        R_elec_values[0][i] = new double*[inner_dummy_vars[i]->get_length()];
+        for(int k = 0; k < inner_dummy_vars[i]->get_length(); k++){
+            eps3 = eps_value + eps2 - inner_dummy_vars[i]->get_value(k);
+        
+            R_elec_values[0][i][k] = new double[4];
+            
+            R_elec_values[0][i][k][NUE_Q2] = outer_dummy_vars->get_value(i);
+            R_elec_values[0][i][k][NUE_E2] = eps2;
+            R_elec_values[0][i][k][NUE_E3] = eps3;
+            R_elec_values[0][i][k][NUE_Q3] = eps_to_mom(eps3);
+        }
         for(int j = 0; j < 8; j++){
             F_values[j] = new double*[N_outer];
             for(int k = 0; k < N_outer; k++)
@@ -842,11 +840,14 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
     inner_dummy_vars_2 = new sub_dummy_vars*[N_outer];
     inner_vals_2 = new dep_vars*[N_outer];
     
-    double epslim_2[6];
-    double eps3;
+    double* epslim_2;
     
+    epslim_values[1] = new double*[N_outer];
     for(int i = 0; i < N_outer; i++){
-        epslim_R2(outer_dummy_vars_2->get_value(i), epslim_2);
+        epslim_values[1][i] = new double[6];
+        epslim_R2(outer_dummy_vars_2->get_value(i), epslim_values[1][i]);
+        epslim_2 = epslim_values[1][i];
+        
         eps3 = mom_to_eps(outer_dummy_vars_2->get_value(i));
         
         eps_low_lim = 0.;
@@ -867,6 +868,17 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
             
         inner_vals_2[i] = new dep_vars(inner_dummy_vars_2[i]->get_length());
         
+        R_elec_values[1][i] = new double*[inner_dummy_vars_2[i]->get_length()];
+        for(int k = 0; k < inner_dummy_vars_2[i]->get_length(); k++){
+            eps2 = inner_dummy_vars_2[i]->get_value(k) + eps3 - eps_value;
+        
+            R_elec_values[1][i][k] = new double[4];
+            
+            R_elec_values[1][i][k][NUE_Q2] = eps_to_mom(eps2);
+            R_elec_values[1][i][k][NUE_E2] = eps2;
+            R_elec_values[1][i][k][NUE_E3] = eps3;
+            R_elec_values[1][i][k][NUE_Q3] = outer_dummy_vars_2->get_value(i);
+        }
         for(int j = 8; j < 16; j++){
             F_values[j] = new double*[N_outer];
             for(int k = 0; k < N_outer; k++)
@@ -876,7 +888,24 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
 }
 
 nu_e_collision::~nu_e_collision(){
-    ;
+    for(int i = 0; i < outer_dummy_vars->get_length(); i++){
+        for(int k = 0; k < inner_dummy_vars[i]->get_length(); k++)
+            delete[] R_elec_values[0][i][k];
+        delete[] R_elec_values[0][i];
+        
+        delete[] epslim_values[0][i];
+    }
+    
+    for(int i = 0; i < outer_dummy_vars_2->get_length(); i++){
+        for(int k = 0; k < inner_dummy_vars_2[i]->get_length(); k++)
+            delete[] R_elec_values[1][i][k];
+        delete[] R_elec_values[1][i];
+        
+        delete[] epslim_values[1][i];
+    }
+    
+    delete[] epslim_values;
+    delete[] R_elec_values;
 }
 
 void nu_e_collision::epslim_R1(double q2, double* eps_lim){
@@ -933,16 +962,210 @@ int nu_e_collision::estimate_load(){
 }
 
 void nu_e_collision::populate_F(density* dens, bool net){
-    //F_LL_RR_for_p1(dens, net);
-    //F_LR_RL_for_p1(dens, net);
+    F_R1_for_p1(dens, net);
+    F_R2_for_p1(dens, net);
     return;
 }
 
-double nu_e_collision::interior_integral(int p2, int which_term){
-    return 0.;
+// Interior integrals of R1
+double nu_e_collision::interior_integral(int q2, int which_term){
+   //limits of integration from BURST C5a
+   //coefficients on integrand come from adjusting factor needed when using Froustey's statistical factor in BURST integral
+   
+    inner_vals[q2]->zeros();
+   
+    double q2_momentum = R_elec_values[0][q2][0][NUE_Q2];
+    double E2 = R_elec_values[0][q2][0][NUE_E2];
+    double q3_momentum, E3;
+    int term = 0;
+    int outer_branch = 0;
+    
+    if(eps_value < 0.5 * scaled_me){
+       //case 1a
+        if(E2 < epslim_values[0][q2][EPS_CUT_3])
+            outer_branch = 0;
+       //case 1b
+        else if(E2 < epslim_values[0][q2][EPS_CUT_1])
+            outer_branch = 1;
+       //case 1c
+        else
+            outer_branch = 2;
+    }
+    else{
+       //case 2a
+        if(E2 < epslim_values[0][q2][EPS_CUT_3])
+            outer_branch = 3;
+       //case 2b
+        else
+            outer_branch = 4;
+    }
+    
+    for(int p4 = 0; p4 < inner_dummy_vars[q2]->get_length(); p4++){
+        q3_momentum = R_elec_values[0][q2][p4][NUE_Q3];
+        E3 = R_elec_values[0][q2][p4][NUE_E3];
+        switch(outer_branch){
+       //case 1a
+            case(0):
+               //case 1ai
+                if(E3 < E2)
+                    term = 1;
+               //case 1aii
+                else if(E3 < epslim_values[0][q2][EPS_TRANS_2])
+                    term = 2;
+               //case 1aiii
+                else
+                    term = 3;
+                break;
+       //case 1b
+            case(1):
+               //case 1bi
+                if(E3 < epslim_values[0][q2][EPS_TRANS_2])
+                    term = 1;
+               //case 1bii
+                else if(E3 < E2)
+                    term = 4;
+               //case 1biii
+                else
+                    term = 3;
+                break;
+       //case 1c
+            case(2):
+               //case 1ci
+                if(E3 < E2)
+                    term = 4;
+               //case 1cii
+                else
+                    term = 3;
+                break;
+       //case 2a
+            case(3):
+               //case 2ai
+                if(E3 < E2)
+                    term = 1;
+               //case 2aii
+                else if (E3 < epslim_values[0][q2][EPS_TRANS_2])
+                    term = 2;
+               //case 2aiii
+                else
+                    term = 3;
+                break;
+       //case 2b
+            case(4):
+               //case 2bi
+                if(E3 < epslim_values[0][q2][EPS_TRANS_2])
+                    term = 1;
+               //case 2bii
+                else if(E3 < E2)
+                    term = 4;
+               //case 2biii
+                else
+                    term = 3;
+                break;
+        }
+        inner_vals[q2]->set_value(p4, 2 * F_values[which_term][q2][p4] * M_12(term, R_elec_values[0][q2][p4]) - 0.5 * me_squared * F[4+which_term][q2][p4] * M_11(term, R_elec_values[0][q2][p4]));
+    }
+    
+    return inner_dummy_vars[q2]->integrate(inner_vals[q2]);;
 }
 
+// Interior integrals of R2
+double nu_e_collision::interior_integral_2(int q3, int which_term){
+   //integration limits found in BURST C5b
+   //coefficients on integrand are adjusting factors from using Froustey's statistical factor with BURST integral
+   
+    inner_vals_2[q3]->zeros();
+   
+    double q3_momentum = R_elec_values[1][q3][0][NUE_Q3];
+    double E3 = R_elec_values[1][q3][0][NUE_E3];
+    double q2_momentum, E2;
+    
+    int term = 0;
+    int outer_branch = 0;
+
+   //case 1    if(p1_me < (sqrt(5)-1)/4.)
+    if(eps_value < (sqrt(5)-1)/4. * scaled_me){
+       //case 1a if(q3_momentum < q_cut_3)
+        if(E3 < epslim_values[1][q3][EPS_CUT_3])
+            outer_branch = 0;
+       //case 1b else if(q3_momentum < q_cut_2_R2)
+        else if(E3 < epslim_values[1][q3][EPS_CUT_2])
+            outer_branch = 1;
+       //case 1c else if(q3_momentum < q_cut_1_R2)
+        else if(E3 < epslim_values[1][q3][EPS_CUT_1])
+            outer_branch = 2;
+       //case 1d
+        else
+            outer_branch = 3; 
+    }
+   //case 2 else if(p1_me < 1./(2 * sqrt(2)))
+    else if(eps_value < 1./(2 * sqrt(2)) * scaled_me){
+       //case 2a if(q3_momentum<q_cut_3)
+        if(E3 < epslim_values[1][q3][EPS_CUT_3])
+            outer_branch = 4;
+       //case 2b  else if(q3_momentum<q_cut_1_R2)
+        else if(E3 < epslim_values[1][q3][EPS_CUT_1])
+            outer_branch = 5;
+       //case 2c else if(q3_momentum<q_cut_2_R2)
+        else if(E3 < epslim_values[1][q3][EPS_CUT_2])
+            outer_branch = 6;
+       //case 2d
+        else
+            outer_branch = 7;        
+    }
+   //case 3 else if(p1_me < 0.5)
+    else if (eps_value < 0.5 * scaled_me){
+       //case 3a if(q3_momentum<q_cut_1_R2)
+        if(E3 < epslim_values[1][q3][EPS_CUT_1])
+            outer_branch = 8;
+       //case 3b else if(q3_momentum<q_cut_3)
+        else if(E3 < epslim_values[1][q3][EPS_CUT_3])
+            outer_branch = 9;
+       //case 3c else if(q3_momentum<q_cut_2_R2)
+        else if(E3 < epslim_values[1][q3][EPS_CUT_2])
+            outer_branch = 10;
+       //case 3d
+        else
+            outer_branch = 11; 
+    }
+   //case 4
+    else{
+        //case 4a if(q3_momentum<q_cut_1_R2)
+        if(E3 < epslim_values[1][q3][EPS_CUT_1])
+            outer_branch = 12;
+       //case 4b  else if(q3_momentum<q_cut_3)
+        else if(E3 < epslim_values[1][q3][EPS_CUT_3])
+            outer_branch = 13;
+       //case 4c else if(q3_momentum<q_cut_2_R2)
+        else if(E3 < epslim_values[1][q3][EPS_CUT_2])
+            outer_branch = 14;
+       //case 4d
+        else
+            outer_branch = 15; 
+    }
+}
 void nu_e_collision::whole_integral(density* dens, double* results, bool net){
+    if (eps_value == 0)
+        for(int j = 0; j < 4; j++)
+            results[j] = 0.;
+    else{
+        populate_F(dens, net);
+        
+        double coeff = pow(Tcm, 5) * pow(_GF_, 2) / (16 * pow(2*_PI_, 3) * pow(eps_value,2 ));
+        
+        for(int i = 0; i < 4; i++){
+            for(int q2 = 0; q2 < outer_dummy_vars->get_length(); q2++)
+                outer_vals->set_value(q2, R_elec_values[0][q2][0][NUE_Q2] / R_elec_values[0][q2][0][NUE_E2] * inner_integral(q2, i));
+            results[i] = outer_dummy_vars->integrate(outer_vals);
+            
+            for(int q3 = 0; q3 < outer_dummy_vars_2->get_length(); q3++)
+                outer_vals_2->set_value(q3, R_elec_values[1][q3][0][NUE_Q3] / R_elec_values[1][q3][0][NUE_E3] * inner_integral_2(q3, i));
+                
+            results[i] += outer_dummy_vars_2->integrate(outer_vals_2);
+            
+            results[i] *= coeff;
+        }
+        
+    }
     return;
 }
 
@@ -951,15 +1174,358 @@ void nu_e_collision::compute_R(double Tcm, double T, double* results){
 
 }
 
-/*
-void nu_e_collision::F_LL_RR_for_p1(density* dens, bool net){
-    double F0 = 0.;
+
+void nu_e_collision::F_R1_for_p1(density* dens, bool net){
+    double F0 = 0;
+    three_vector* Fxyz = new three_vector();
+        
+    for(int q2 = 0; q2 < outer_dummy_vars->get_length(); q2++){
+        for(int p4 = 0; p4 < inner_dummy_vars[q2]->get_length(); p4++){            
+            F_LL_F_RR(dens, true, R_elec_values[0][q2][p4][NUE_E2], R_elec_values[0][q2][p4][NUE_E3], q2, p4, net, &F0, Fxyz);
+            
+            F_values[0][q2][p4] = F0;
+            F_values[1][q2][p4] = Fxyz->get_value(0);
+            F_values[2][q2][p4] = Fxyz->get_value(1);
+            F_values[3][q2][p4] = Fxyz->get_value(2);
+            
+            F_LR_F_RL(dens, true, R_elec_values[0][q2][p4][NUE_E2], R_elec_values[0][q2][p4][NUE_E3], q2, p4, net, &F0, Fxyz);
+            
+            F_values[4][q2][p4] = F0;
+            F_values[5][q2][p4] = Fxyz->get_value(0);
+            F_values[6][q2][p4] = Fxyz->get_value(1);
+            F_values[7][q2][p4] = Fxyz->get_value(2);
+        }
+    }
+}
+
+void nu_e_collision::F_R2_for_p1(density* dens, bool net){
+    double F0 = 0;
     three_vector* Fxyz = new three_vector();
     
-    for(int p2 = 0; p2 < outer_dummy_vars->get_length(); p2++)
+    double E2, E3;
+    
+    for(int q3 = 0; q3 < outer_dummy_vars->get_length(); q3++){
+        E3 = mom_to_eps(outer_dummy_vars->get_value(q3));
+    
+        for(int p4 = 0; p4 < inner_dummy_vars[q3]->get_length(); p4++){
+            E2 = E3 + inner_dummy_vars[q3]->get_value(p4) - eps_value;
+            
+            F_LL_F_RR(dens, true, R_elec_values[1][q3][p4][NUE_E2], R_elec_values[1][q3][p4][NUE_E3], q3, p4, net, &F0, Fxyz);
+            
+            F_values[8][q3][p4] = F0;
+            F_values[9][q3][p4] = Fxyz->get_value(0);
+            F_values[10][q3][p4] = Fxyz->get_value(1);
+            F_values[11][q3][p4] = Fxyz->get_value(2);
+            
+            F_LR_F_RL(dens, true, E2, E3, q3, p4, net, &F0, Fxyz);
+            
+            F_values[12][q3][p4] = 2 * F0;
+            F_values[13][q3][p4] = 2 * Fxyz->get_value(0);
+            F_values[14][q3][p4] = 2 * Fxyz->get_value(1);
+            F_values[15][q3][p4] = 2 * Fxyz->get_value(2);
+        }
+    }
 }
-*/
 
 
 
+void nu_e_collision::F_LL_F_RR(density* dens, bool is_R1, double E2, double E3, int outer_index, int inner_index, bool net, double* F0, three_vector* F){
+    double T__Tcm = dens->get_T() / Tcm;
+
+    double f2 = 1 / (exp(E2/T__Tcm)+1);
+    double f3 = 1 / (exp(E3/T__Tcm)+1);
+    
+    matrix* p_1 = new matrix();
+    matrix* minus_p_1 = new matrix();
+    matrix* p_4 = new matrix();
+    
+    p_1->convert_p_to_matrix(dens, neutrino, p1);
+    minus_p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
+    
+    get_inner_matrix(dens, inner_dummy_vars[outer_index]->get_value(inner_index), outer_index, inner_index, neutrino, p_4, true, is_R1);
+    
+    matrix* minus_p_4 = new matrix(p_4);
+    minus_p_4->convert_this_to_identity_minus_this();
+    
+    matrix* F_dummy1 = new matrix();
+    matrix* F_dummy2 = new matrix();
+    matrix* F_dummy3 = new matrix();
+    matrix* F_dummy4 = new matrix();
+    matrix* F_dummy5 = new matrix();
+    matrix* F_dummy6 = new matrix();
+    matrix* F_dummy7 = new matrix();
+    matrix* F_dummy8 = new matrix();
+    matrix* F_dummy9 = new matrix();
+    matrix* F_dummy10 = new matrix();
+    matrix* F_dummy11 = new matrix();
+    
+    F_dummy1->matrix_multiply(G_L, p_4);
+    F_dummy2->matrix_multiply(G_L, minus_p_1);
+    F_dummy3->matrix_multiply(F_dummy1, F_dummy2);
+    F_dummy3->multiply_by(f3 * (1-f2));
+    F_dummy4->matrix_multiply(G_L, minus_p_4);
+    F_dummy5->matrix_multiply(G_L, p_1);
+    F_dummy6->matrix_multiply(F_dummy4, F_dummy5);
+    F_dummy6->multiply_by(f2 * (1-f3));
+    if(net==true){
+        F_dummy6->multiply_by(complex<double> (-1,0));
+    }
+    F_dummy7->matrix_add(F_dummy3, F_dummy6);
+    
+    F_dummy8->matrix_multiply(p_4, minus_p_1);
+    F_dummy8->multiply_by(f3 * (1-f2));
+    F_dummy9->matrix_multiply(minus_p_4, p_1);
+    F_dummy9->multiply_by(f2 * (1-f3));
+    if(net==true){
+        F_dummy9->multiply_by(complex<double> (-1,0));
+    }
+    F_dummy10->matrix_add(F_dummy8, F_dummy9);
+    
+    F_dummy10->multiply_by(pow(_sin_squared_theta_W_,2));
+     
+    F_dummy11->matrix_add(F_dummy7, F_dummy10);
+     
+    complex<double> comp_F0 = F_dummy11->get_A0();
+    complex_three_vector* comp_F = F_dummy11->get_A();
+    
+    comp_F->multiply_by(2);
+    
+    *F0 = 2*real(comp_F0);
+    F->make_real(comp_F);
+    
+    delete F_dummy1;
+    delete F_dummy2;
+    delete F_dummy3;
+    delete F_dummy4;
+    delete F_dummy5;
+    delete F_dummy6;
+    delete F_dummy7;
+    delete F_dummy8;
+    delete F_dummy9;
+    delete F_dummy10;
+    delete F_dummy11;
+    delete p_4;
+    delete minus_p_4;
+    delete p_1;
+    delete minus_p_1;  
+}
+
+void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, int outer_index, int inner_index, bool net, double* F0, three_vector* F){
+    double T__Tcm = dens->get_T() / Tcm;
+
+    double f2 = 1 / (exp(E2/T__Tcm)+1);
+    double f3 = 1 / (exp(E3/T__Tcm)+1);
+    
+    matrix* p_1 = new matrix();
+    matrix* minus_p_1 = new matrix();
+    matrix* p_4 = new matrix();
+    
+    p_1->convert_p_to_matrix(dens, neutrino, p1);
+    minus_p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
+    
+    get_inner_matrix(dens, inner_dummy_vars[outer_index]->get_value(inner_index), outer_index, inner_index, neutrino, p_4, true, is_R1);
+    
+    matrix* minus_p_4 = new matrix(p_4);
+    minus_p_4->convert_this_to_identity_minus_this();
+    
+    /*
+    F_dummy1 = G_L * rho_4
+    F_dummy2 = F_dummy1 * (1-rho_1)
+    F_dummy3 = rho_4 * G_L
+    F_dummy4 = F_dummy3 * (1-rho_1)
+    
+    F_dummy5 = G_L * (1-rho_4)
+    F_dummy6 = F_dummy5 * rho_1
+    F_dummy7 = (1-rho_4) * G_L
+    F_dummy8 = F_dummy7 * rho_1
+    
+    F_dummy9 = F_dummy2 + F_dummy4 => F_dummy9
+    F_dummy10 = F_dummy6 + F_dummy8 => F_dummy10
+    F_dummy11 = F_dummy9 - F_dummy10 => F_dummy11 = F_LR + F_RL
+    
+    F_LR = F_dummy2 - F_dummy_6
+    F_RL = F_dummy4 - F_dummy_8
+    see Froustey C.19
+    */
+    
+    matrix* F_dummy1 = new matrix();
+    matrix* F_dummy2 = new matrix();
+    matrix* F_dummy3 = new matrix();
+    matrix* F_dummy4 = new matrix();
+    matrix* F_dummy5 = new matrix();
+    matrix* F_dummy6 = new matrix();
+    matrix* F_dummy7 = new matrix();
+    matrix* F_dummy8 = new matrix();
+    matrix* F_dummy9 = new matrix();
+    matrix* F_dummy10 = new matrix();
+    matrix* F_dummy11 = new matrix();
+    
+    F_dummy1->matrix_multiply(G_L, p_4);
+    F_dummy2->matrix_multiply(F_dummy1, minus_p_1);
+    F_dummy3->matrix_multiply(p_4, G_L);
+    F_dummy4->matrix_multiply(F_dummy3, minus_p_1);
+    
+    F_dummy5->matrix_multiply(G_L, minus_p_4);
+    F_dummy6->matrix_multiply(F_dummy5, p_1);
+    F_dummy7->matrix_multiply(minus_p_4, G_L);
+    F_dummy8->matrix_multiply(F_dummy7, p_1);
+    
+    F_dummy9->matrix_add(F_dummy2, F_dummy4);
+    F_dummy9->multiply_by(f3 * (1-f2));
+    F_dummy10->matrix_add(F_dummy6, F_dummy8);
+    F_dummy10->multiply_by(f2 * (1-f3));
+     
+    if(net==true){
+        F_dummy10->multiply_by(complex<double> (-1,0));
+    }
+    F_dummy11->matrix_add(F_dummy9, F_dummy10);
+    
+    F_dummy11->multiply_by(_sin_squared_theta_W_);
+    
+    complex<double> comp_F0 = F_dummy11->get_A0();
+    complex_three_vector* comp_F = F_dummy11->get_A();
+    
+    comp_F->multiply_by(2);
+    
+    *F0 = 2*real(comp_F0);
+    F->make_real(comp_F);
+    
+    delete F_dummy1;
+    delete F_dummy2;
+    delete F_dummy3;
+    delete F_dummy4;
+    delete F_dummy5;
+    delete F_dummy6;
+    delete F_dummy7;
+    delete F_dummy8;
+    delete F_dummy9;
+    delete F_dummy10;
+    delete F_dummy11;
+    delete p_4;
+    delete minus_p_4;
+    delete p_1;
+    delete minus_p_1;  
+}
+
+double nu_e_collision::M_11(int which, double* kinematic){
+    double E2 = kinematic[NUE_E2];
+    double E3 = kinematic[NUE_E3];
+    double q2_momentum = kinematic[NUE_Q2];
+    double q3_momentum = kinematic[NUE_Q3];
+
+    double b = 0;
+    double a = 0;
+    double C1 = pow(eps_value + E2,2) - me_squared;
+    
+    if(which==1){
+        a = eps_value + E2 - E3 - q3_momentum;
+        b = eps_value + E2 - E3 + q3_momentum;
+    }
+    else if(which==2){
+        a = eps_value - q2_momentum;
+        b = eps_value + q2_momentum;
+    }
+    else if(which==3){
+        a = E3 + q3_momentum - eps_value - E2;
+        b = eps_value + q2_momentum;
+    }
+    else{
+        a = q2_momentum - eps_value;
+        b = eps_value + E2 - E3 + q3_momentum;
+    }
+    
+    return 0.5 * (C1 * b - 1./3 * pow(b,3)) - 0.5 * (C1 * a - 1./3 * pow(a,3));
+}
+
+double nu_e_collision::M_12(int which, double* kinematic){
+    double E2 = kinematic[NUE_E2];
+    double E3 = kinematic[NUE_E3];
+    double q2_momentum = kinematic[NUE_Q2];
+    double q3_momentum = kinematic[NUE_Q3];
+
+    double b = 0;
+    double a = 0;
+    double C1 = pow(eps_value + E2,2) - me_squared;
+    
+    if(which==1){
+        a = eps_value + E2 - E3 - q3_momentum;
+        b = eps_value + E2 - E3 + q3_momentum;
+    }
+    else if(which==2){
+        a = eps_value - q2_momentum;
+        b = eps_value + q2_momentum;
+    }
+    else if(which==3){
+        a = E3 + q3_momentum - eps_value - E2;
+        b = eps_value + q2_momentum;
+    }
+    else{
+        a = q2_momentum - eps_value;
+        b = eps_value + E2 - E3 + q3_momentum;
+    }
+    
+    return 0.25 * (pow(C1,2) * b - 2./3 * C1 * pow(b,3) + 1./5 * pow(b,5)) - 0.25 * (pow(C1,2) * a - 2./3 * C1 * pow(a,3) + 1./5 * pow(a,5));
+   
+}
+
+double nu_e_collision::M_21(int which, double* kinematic){
+    double E2 = kinematic[NUE_E2];
+    double E3 = kinematic[NUE_E3];
+    double q2_momentum = kinematic[NUE_Q2];
+    double q3_momentum = kinematic[NUE_Q3];
+    
+    
+    double b = 0;
+    double a = 0;
+    double C2 = pow(eps_value - E3,2) - me_squared;
+    
+    if(which==1){
+        a = eps_value + E2 - E3 - q2_momentum;
+        b = eps_value + E2 - E3 + q2_momentum;
+    }
+    else if(which==2){
+        a = eps_value - q3_momentum;
+        b = eps_value + q3_momentum;
+    }
+    else if(which==3){
+        a = E3 - eps_value - E2 + q2_momentum;
+        b = eps_value + q3_momentum;
+    }
+    else{
+        a = q3_momentum - eps_value;
+        b = eps_value + E2 - E3 + q2_momentum;
+    }
+   
+    return 0.5 * (1./3 * pow(b,3) - C2 * b) - 0.5 * (1./3 * pow(a,3) - C2 * a);
+}
+
+double nu_e_collision::M_22(int which, double* kinematic){
+    double E2 = kinematic[NUE_E2];
+    double E3 = kinematic[NUE_E3];
+    double q2_momentum = kinematic[NUE_Q2];
+    double q3_momentum = kinematic[NUE_Q3];
+
+    double b = 0;
+    double a = 0;
+    double C2 = pow(eps_value - E3,2) - me_squared;
+    
+    if(which==1){
+        a = eps_value + E2 - E3 - q2_momentum;
+        b = eps_value + E2 - E3 + q2_momentum;
+    }
+    else if(which==2){
+        a = eps_value - q3_momentum;
+        b = eps_value + q3_momentum;
+    }
+    else if(which==3){
+        a = E3 - eps_value - E2 + q2_momentum;
+        b = eps_value + q3_momentum;
+    }
+    else{
+        a = q3_momentum - eps_value;
+        b = eps_value + E2 - E3 + q2_momentum;
+    }
+    
+    return 0.25 * (1./5 * pow(b,5) - 2./3 * C2 * pow(b,3) + pow(C2,2) * b) - 0.25 * (1./5 * pow(a,5) - 2./3 * C2 * pow(a,3) + pow(C2,2) * a);
+}
 

@@ -15,9 +15,6 @@ using std::endl;
 const double _COMPUTE_R_ERROR_ = -999.;
 const double tolerance_min_rate = 100.;
 
-#ifndef ELIM_VALUES
-#define ELIM_VALUES
-
 #define EPS_CUT_1 0
 #define EPS_CUT_2 5
 #define EPS_CUT_3 1
@@ -25,7 +22,10 @@ const double tolerance_min_rate = 100.;
 #define EPS_LIM_1 3
 #define EPS_LIM_2 4
 
-#endif
+#define NUE_Q2 0
+#define NUE_E2 1
+#define NUE_Q3 2
+#define NUE_E3 3
 
 class collision_integral{
     protected:
@@ -89,6 +89,8 @@ class electron_collision_integral : public collision_integral{
         double mom_to_eps(double);
         double eps_to_mom(double);
         
+        virtual double interior_integral_2(int, int);
+        
         double get_Tcm();
         void set_Tcm(double);
         
@@ -99,9 +101,7 @@ class electron_collision_integral : public collision_integral{
 class nu_nu_collision : public collision_integral{
     protected:
         sub_dummy_vars** p4_values;
-    
-        int** interpolation_indices;
-        
+            
         const int load_factor = 4 + 4; // Fvvsc plus Fvvbarsc
     public:
         nu_nu_collision(int, linspace_and_gl*, bool);
@@ -111,6 +111,7 @@ class nu_nu_collision : public collision_integral{
         
         void populate_F(density*, bool); 
         double interior_integral(int, int); 
+        double interior_integral_2(int, int);
         void whole_integral(density*, double*, bool); 
         
         void compute_R(double, double, double*);
@@ -134,6 +135,10 @@ class nu_nu_collision : public collision_integral{
 
 
 class nu_e_collision : public electron_collision_integral{
+    protected:
+        double**** R_elec_values;
+        double*** epslim_values;
+        
     public:
         nu_e_collision(int, linspace_and_gl*, bool, double);
         ~nu_e_collision();
@@ -142,17 +147,24 @@ class nu_e_collision : public electron_collision_integral{
         
         void populate_F(density*, bool); 
         double interior_integral(int, int); 
+        double interior_integral_2(int, int)
         void whole_integral(density*, double*, bool); 
         
         void compute_R(double, double, double*);
         
+        double M_11(int, double*);
+        double M_12(int, double*);
+        double M_21(int, double*);
+        double M_22(int, double*);              
+        
         void epslim_R1(double, double*);
         void epslim_R2(double, double*);
         
-        void F_LL_F_RR(density*, double*, three_vector*, bool);
-        void F_LL_RR_for_p1(density*, bool);
+        void F_LL_F_RR(density*, bool, double, double, int, int, bool, double*, three_vector*);
+        void F_LR_F_RL(density*, bool, double, double, int, int, bool, double*, three_vector*);
         
-        void F_LR_RL_for_p1(density*, bool);
+        void F_R1_for_p1(density*, bool);
+        void F_R2_for_p1(density*, bool);
 };
 
 double J1(double, double, double);
