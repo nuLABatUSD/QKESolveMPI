@@ -1,3 +1,5 @@
+#define USE_V_THERMAL 0
+
 #include "QKESolve.hh"
 #include "density.hh"
 #include "arrays.hh"
@@ -24,14 +26,16 @@ int main(int argc, char* argv[]){
 
     linspace_and_gl* eps = new linspace_and_gl(0., 20., 201, 5);
 
-    density* ic = new density(eps, atof(argv[1]), atof(argv[2]), atof(argv[3]), atof(argv[4]), atof(argv[5]), 0.9);
-    
+//    density* ic = new density(eps, atof(argv[1]), atof(argv[2]), atof(argv[3]), atof(argv[4]), atof(argv[5]), 0.9);
+
+    density* ic = new density(eps, atof(argv[2]), atof(argv[3]));
+    ic->set_T(atof(argv[1]));  
     QKE* sim = new QKE(eps, 0.8, atof(argv[6]), ic);
     
     string run_filename = string(argv[7]) + "_run.csv";
     string eps_filename = string(argv[7]) + "_eps.csv";
     
-    sim->run(1000, 30, 5e20, run_filename, true);
+    sim->run(1000, 15000, 5e20, run_filename, true);
 
     ofstream eps_file;
     eps_file.open(eps_filename);
