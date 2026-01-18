@@ -40,7 +40,7 @@ collisions::collisions(int rank, int num_ranks, linspace_and_gl* e){
             k++;
         }
     }    
-    
+        
     if(myid != 0){
 /*        for(int i = myid-1; i < N_bins*2; i += numprocs-1)
             num_integrators++;
@@ -54,9 +54,12 @@ collisions::collisions(int rank, int num_ranks, linspace_and_gl* e){
 */
         num_integrators = worker_values[myid][0];
         integrators = new collision_integral*[num_integrators];
-        for(int j = 0; j < worker_values[myid][0]; j++){
-            integrators[j] = new nu_nu_collision(worker_result_indexes[myid][j] % N_bins, eps, worker_result_indexes[myid][j] < N_bins);
+        for(int j = 0; j < num_integrators; j++){
+//            cout << myid << ", " << j << ", " << worker_result_indexes[myid][j] << endl;
+            integrators[j] = new nu_e_collision(worker_result_indexes[myid][j] % N_bins, eps, worker_result_indexes[myid][j] < N_bins, 32.);
+//            integrators[j] = new nu_nu_collision(worker_result_indexes[myid][j] % N_bins, eps, worker_result_indexes[myid][j] < N_bins);
             load_value += integrators[j]->estimate_load();
+            
         }
     }
     else{

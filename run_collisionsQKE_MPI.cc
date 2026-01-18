@@ -26,9 +26,10 @@ int main(int argc, char* argv[])
         
     linspace_and_gl* eps = new linspace_and_gl(0., 20., 201, 5);
     int N_bins = eps->get_length();
+    
 
     collisions* C_MPI = new collisions(myid, numprocs, eps);
-    
+        
     double* R_values = new double[N_bins * 4];
 
     auto start = high_resolution_clock::now();
@@ -38,11 +39,11 @@ int main(int argc, char* argv[])
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
     
-//    cout << myid << ", " << C_MPI->get_load_value() << endl;
+    cout << myid << ", " << C_MPI->get_load_value() << endl;
     
     if(myid == 0){
         for(int i = 0; i < eps->get_length(); i++)
-            cout << eps->get_value(i) << ", " << R_values[i] << endl;
+            cout << eps->get_value(i) << ", " << R_values[i] << ", " << R_values[2*206+i] << endl;
         cout << "Time elapsed: " << duration.count() / 1000. << " seconds" << endl;
     }
 

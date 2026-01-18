@@ -154,6 +154,8 @@ sub_dummy_vars::sub_dummy_vars(dummy_vars* copy_all) : dummy_vars(copy_all){
 sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, double A, double B, int N_GL) : dummy_vars(){
     bool err = false;
     
+//    cout << "sub_dummy_vars, " << A << ", " << B << endl;
+    
     if(A < 0)
         err = true;
     else{
@@ -178,7 +180,7 @@ sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, double A, double B, int N_GL) : d
     top_shift = 0;
     
     if (count_min < dv->get_length()){
-        cout << dv->get_value(count_min) << endl;
+//        cout << dv->get_value(count_min) << endl;
         if(abs(dv->get_value(count_min-1)-A) < SUBDV_INTERP_SMALL){
             count_min--;
             bot_shift = 0;
@@ -196,7 +198,7 @@ sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, double A, double B, int N_GL) : d
     }
     else{
         count_max = dv->index_below_for_interpolation(B);
-            cout << B - dv->get_value(count_max) << endl;
+//            cout << B - dv->get_value(count_max) << endl;
         if(B - dv->get_value(count_max) > SUBDV_INTERP_SMALL){
             top_shift = 1;
         }
@@ -230,7 +232,7 @@ sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, double A, double B, int N_GL) : d
         } 
     }
     
-    cout << count_min << ", " << bot_shift << ", " << top_shift << endl;
+//    cout << "sub_dummy_vars, " << count_min << ", " << bot_shift << ", " << top_shift << endl;
     
     if (count_min == dv->get_length()){
         values[0] = A;
@@ -270,9 +272,14 @@ sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, double A, double B, int N_GL) : d
             values[N-i] = dv->get_value_from_end(i);
             weights[N-i] = dv->get_weight_from_end(i);
             need_interpolation[N-i] = false;
-            interpolation_indices[i] = dv->get_length() - i;    
+            interpolation_indices[N-i] = dv->get_length() - i;    
         }
     }
+    
+    if(abs(A-values[0]) > 1.e-12){
+        cout << "sub_dummy_vars: " << A << ", " << B << ", " << values[0] << ", " << values[N-1] <<  endl;
+        cout << "** " << dv->index_below_for_interpolation(A) << endl;
+        }
 }
 
 sub_dummy_vars::sub_dummy_vars(dummy_vars* dv, int num) : dummy_vars() {

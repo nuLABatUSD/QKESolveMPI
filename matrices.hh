@@ -17,6 +17,7 @@ class matrix
     matrix();
     matrix(complex<double>, complex_three_vector*);
     matrix(bool);
+    matrix(matrix*);
     
     void convert_p_to_matrix(double, three_vector*);
     void convert_p_to_matrix(density*, bool, int);

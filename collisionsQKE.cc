@@ -21,8 +21,11 @@ collision_integral::collision_integral(int b, linspace_and_gl* e, bool nu){
     N_bins = e->get_length();
     eps_value = e->get_value(bin);
     neutrino = nu;
-    
+
     eps = new linspace_and_gl(e);
+    
+    if (eps_value == 0.)
+        return;
     
     min_rate = 0.;
     
@@ -36,6 +39,9 @@ collision_integral::collision_integral(int b, linspace_and_gl* e, bool nu){
 
 collision_integral::~collision_integral(){
     delete eps;
+
+    if (eps_value == 0.)
+        return;
     
     int N_outer = outer_dummy_vars->get_length();
     
@@ -89,6 +95,8 @@ double collision_integral::get_min_rate()
 {   return min_rate;}
 
 void collision_integral::get_inner_matrix(density* dens, double nrg, sub_dummy_vars* sdv, int inner_index, bool nu, matrix* result, bool use_matrix){ 
+//    cout << "call base get_inner_matrix" << endl;
+//    cout << "* " << sdv->get_need_interp(inner_index) << endl;
     if(sdv->get_need_interp(inner_index)){
         three_vector* A = new three_vector();
         double A0 = dens->interpolated_matrix(nu, sdv->get_interp_index(inner_index), nrg, A);
@@ -99,11 +107,13 @@ void collision_integral::get_inner_matrix(density* dens, double nrg, sub_dummy_v
         delete A;
     }
     else{
+//        cout << "** " << sdv->get_interp_index(inner_index) << ", " << inner_index << ", " << sdv->get_length() << endl;
         if(use_matrix)
             result->convert_p_to_matrix(dens, nu, sdv->get_interp_index(inner_index));
         else
             result->convert_p_to_identity_minus_matrix(dens, nu, sdv->get_interp_index(inner_index));
     }
+//    cout << "get_inner_matrix base done" << endl;
 }
 
 void collision_integral::get_inner_matrix(density* dens, double nrg, int outer_index, int inner_index, bool nu, matrix* result, bool use_matrix){ 
@@ -112,7 +122,9 @@ void collision_integral::get_inner_matrix(density* dens, double nrg, int outer_i
 
 
 electron_collision_integral::electron_collision_integral(int b, linspace_and_gl* e, bool nu, double T_cm) : collision_integral(b, e, nu){
-    Tcm = T_cm;
+    if (eps_value == 0.)
+         return;
+   Tcm = T_cm;
 
     scaled_me = _electron_mass_ / Tcm;
     me_squared = scaled_me * scaled_me;
@@ -127,6 +139,8 @@ electron_collision_integral::electron_collision_integral(int b, linspace_and_gl*
 }
 
 electron_collision_integral::~electron_collision_integral(){
+    if (eps_value == 0.)
+         return;
     delete G_L;
     delete G_R;
     
@@ -156,21 +170,64 @@ double electron_collision_integral::mom_to_eps(double q){
 }
 
 double electron_collision_integral::eps_to_mom(double e){
-    if(e < scaled_me){
-        cout << "ERROR: TRYING TO USE ELECTRON ENERGY LESS THAN MASS" << endl;
+    if (e > scaled_me)
+        return sqrt(e*e - me_squared);
+    else if (e - scaled_me > - 1.e-12 * scaled_me)
+        return 0.;
+    else{
+        cout << "eps_to_mom:  ERROR: TRYING TO USE ELECTRON ENERGY LESS THAN MASS; eps_value = " << eps_value << endl;
+        cout << "   e = " << e << ", m/Tcm = " << scaled_me << "; e - m/Tcm = " << e - scaled_me << endl;
         return -1.;
     }
-    return sqrt(e*e - me_squared);
 }
 
 void electron_collision_integral::get_inner_matrix(density* dens, double nrg, int outer_index, int inner_index, bool nu, matrix* result, bool use_matrix, bool inner_dv1){
+//    cout << "get_inner_matrix" << endl;
     if(inner_dv1)
         get_inner_matrix(dens, nrg, inner_dummy_vars[outer_index], inner_index, nu, result, use_matrix);
     else
         get_inner_matrix(dens, nrg, inner_dummy_vars_2[outer_index], inner_index, nu, result, use_matrix);    
+//    cout << "get_inner_matrix done" << endl;
 }
 
+void collision_integral::show_idv(int info, int outer){
+    sub_dummy_vars* sdv = inner_dummy_vars[outer];
+    for(int i = 0; i < sdv->get_length(); i++){
+        if(info == 0)
+            cout << sdv->get_value(i);
+        else if(info == 1)
+            cout << sdv->get_need_interp(i);
+        else
+            cout << sdv->get_interp_index(i);
+        cout << ", ";
+    }
+    cout << endl;
+}
+
+void electron_collision_integral::show_idv(int R, int info, int outer){
+    if(R == 1)
+        collision_integral::show_idv(info, outer);
+    else{
+        sub_dummy_vars* sdv = inner_dummy_vars_2[outer];
+        
+        for(int i = 0; i < sdv->get_length(); i++){
+            if(info == 0)
+                cout << sdv->get_value(i);
+            else if(info == 1)
+                cout << sdv->get_need_interp(i);
+            else
+                cout << sdv->get_interp_index(i);
+            cout << ", ";
+        }
+        cout << endl;
+    }
+}
+
+
+
 nu_nu_collision::nu_nu_collision(int b, linspace_and_gl* e, bool nu) : collision_integral(b, e, nu){
+    if (eps_value == 0.)
+         return;
     outer_dummy_vars = new dummy_vars(e);
     outer_vals = new dep_vars(N_bins);
     
@@ -212,6 +269,8 @@ nu_nu_collision::nu_nu_collision(int b, linspace_and_gl* e, bool nu) : collision
 }
 
 nu_nu_collision::~nu_nu_collision(){
+    if (eps_value == 0.)
+         return;
     for(int i = 0; i < N_bins; i++){
         if(!p4_values[i])
             delete p4_values[i];
@@ -219,6 +278,9 @@ nu_nu_collision::~nu_nu_collision(){
 }
 
 int nu_nu_collision::estimate_load(){
+    if (eps_value == 0)
+        return 0;
+        
     int iter = 0;
     
     for(int i = 0; i < outer_dummy_vars->get_length(); i++)
@@ -774,6 +836,8 @@ void nu_nu_collision::compute_R(double Tcm, double T, double* results){
 }
 
 nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) : electron_collision_integral(b, e, nu, T_cm){
+    if (eps_value == 0.)
+         return;
     num_F = 4;
     F_values = new double**[4*num_F];
 
@@ -812,13 +876,20 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
         p4_low = eps_value + eps2 - epslim[EPS_LIM_1];
         p4_high = eps_value + eps2 - eps_low_lim;
         
-        inner_dummy_vars[i] = new sub_dummy_vars(eps, p4_low, p4_high, eps->get_num_gl());        
+//        cout << "nu_e_collision, " << eps_value << ", " << p4_low << ", " << p4_high << endl;
+        
+        inner_dummy_vars[i] = new sub_dummy_vars(eps, p4_low, p4_high, eps->get_num_gl());     
+                
+//        cout << "nu_e_collision, " << inner_dummy_vars[i]->length() << endl;   
 
         inner_vals[i] = new dep_vars(inner_dummy_vars[i]->get_length());
         
         R_elec_values[0][i] = new double*[inner_dummy_vars[i]->get_length()];
         for(int k = 0; k < inner_dummy_vars[i]->get_length(); k++){
             eps3 = eps_value + eps2 - inner_dummy_vars[i]->get_value(k);
+            
+            if(eps3 < scaled_me)
+                eps3 = scaled_me;
         
             R_elec_values[0][i][k] = new double[4];
             
@@ -833,6 +904,8 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
                 F_values[j][k] = new double[inner_vals[i]->get_length()]();
         }
     }
+    
+//    cout << "nu_e_collision, switch to R2" << endl;
     
     outer_dummy_vars_2 = new gl_dummy_vars(N_outer, 0.);
     outer_vals_2 = new dep_vars(N_outer);
@@ -850,7 +923,7 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
         
         eps3 = mom_to_eps(outer_dummy_vars_2->get_value(i));
         
-        eps_low_lim = 0.;
+        eps_low_lim = scaled_me;
         if(eps3 > epslim_2[EPS_CUT_2])
             eps_low_lim = epslim_2[EPS_LIM_2];
 
@@ -866,6 +939,8 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
         else
             inner_dummy_vars_2[i] = new sub_dummy_vars(eps, p4_low, p4_high, eps->get_num_gl());   
             
+//        cout << "nu_e_collision, " << inner_dummy_vars_2[i]->get_length() << endl;
+
         inner_vals_2[i] = new dep_vars(inner_dummy_vars_2[i]->get_length());
         
         R_elec_values[1][i] = new double*[inner_dummy_vars_2[i]->get_length()];
@@ -878,6 +953,10 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
             R_elec_values[1][i][k][NUE_E2] = eps2;
             R_elec_values[1][i][k][NUE_E3] = eps3;
             R_elec_values[1][i][k][NUE_Q3] = outer_dummy_vars_2->get_value(i);
+                if (R_elec_values[1][i][k][NUE_Q2] == -1.){
+                    cout << "***" << p4_low << ", " << p4_high << "," << eps3 << ", " <<eps_value << endl;
+                    cout << "*** " << i << ", " << k << ", " << inner_dummy_vars_2[i]->get_value(k) << endl;
+                    }
         }
         for(int j = 8; j < 16; j++){
             F_values[j] = new double*[N_outer];
@@ -885,9 +964,13 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
                 F_values[j][k] = new double[inner_vals_2[i]->get_length()]();
         }
     }
+    
 }
 
 nu_e_collision::~nu_e_collision(){
+    if (eps_value == 0.)
+         return;
+        
     for(int i = 0; i < outer_dummy_vars->get_length(); i++){
         for(int k = 0; k < inner_dummy_vars[i]->get_length(); k++)
             delete[] R_elec_values[0][i][k];
@@ -950,6 +1033,9 @@ void nu_e_collision::epslim_R2(double q3, double* eps_lim){
 
 
 int nu_e_collision::estimate_load(){
+    if (eps_value == 0.)
+         return 0;
+
     int iter = 0;
     
     for(int i = 0; i < outer_dummy_vars->get_length(); i++)
@@ -962,8 +1048,11 @@ int nu_e_collision::estimate_load(){
 }
 
 void nu_e_collision::populate_F(density* dens, bool net){
+//    cout << "populate_F, R1" << endl;
     F_R1_for_p1(dens, net);
+//    cout << "populate_F, R2" << endl;
     F_R2_for_p1(dens, net);
+//    cout << "populate_F, done" << endl;
     return;
 }
 
@@ -1062,10 +1151,10 @@ double nu_e_collision::interior_integral(int q2, int which_term){
                     term = 3;
                 break;
         }
-        inner_vals[q2]->set_value(p4, 2 * F_values[which_term][q2][p4] * M_12(term, R_elec_values[0][q2][p4]) - 0.5 * me_squared * F[4+which_term][q2][p4] * M_11(term, R_elec_values[0][q2][p4]));
+        inner_vals[q2]->set_value(p4, 2 * F_values[which_term][q2][p4] * M_12(term, R_elec_values[0][q2][p4]) - 0.5 * me_squared * F_values[4+which_term][q2][p4] * M_11(term, R_elec_values[0][q2][p4]));
     }
     
-    return inner_dummy_vars[q2]->integrate(inner_vals[q2]);;
+    return inner_dummy_vars[q2]->integrate(inner_vals[q2]);
 }
 
 // Interior integrals of R2
@@ -1142,34 +1231,191 @@ double nu_e_collision::interior_integral_2(int q3, int which_term){
         else
             outer_branch = 15; 
     }
+    
+    
+    for(int p4 = 0; p4 < inner_dummy_vars_2[q3]->get_length(); p4++){
+        q2_momentum = R_elec_values[1][q3][p4][NUE_Q2];
+        E2 = R_elec_values[1][q3][p4][NUE_E2];
+        switch(outer_branch){
+        //CASE 1
+            case(0):
+                if(E2 < E3)
+                    term = 1;
+                else if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 2;
+                else
+                    term = 3;
+                break;
+            case(1):
+                if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 1;
+                else if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+            case(2):
+                if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+            case(3):
+                if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+        //CASE 2
+            case(4):
+                if(E2 < E3)
+                    term = 1;
+                else if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 2;
+                else
+                    term = 3;
+                break;
+            case(5):
+                if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 1;
+                else if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+            case(6):
+                if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 1;
+                else if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+            case(7):
+                if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+        //CASE 3
+            case(8):
+                if(E2 < E3)
+                    term = 1;
+                else if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 2;
+                else
+                    term = 3;
+                break;
+            case(9):
+                if(E2 < E3)
+                    term = 1;
+                else if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 2;
+                else
+                    term = 3;
+                break;
+            case(10):
+                if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 1;
+                else if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+            case(11):
+                if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+        //CASE 4
+            case(12):
+                if(E2 < E3)
+                    term = 1;
+                else
+                    term = 2;
+                break;
+            case(13):
+                if(E2 < E3)
+                    term = 1;
+                else if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 2;
+                else
+                    term = 3;
+                break;
+            case(14):
+                if(E2 < epslim_values[1][q3][EPS_TRANS_2])
+                    term = 1;
+                else if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+            case(15):
+                if(E2 < E3)
+                    term = 4;
+                else
+                    term = 3;
+                break;
+        }
+        inner_vals_2[q3]->set_value(p4, 0.5 * F_values[8+which_term][q3][p4] * M_22(term, R_elec_values[1][q3][p4]) + 0.5 * me_squared * F_values[12+which_term][q3][p4] * M_21(term, R_elec_values[1][q3][p4]));
+    }
+    return inner_dummy_vars_2[q3]->integrate(inner_vals_2[q3]);
 }
 void nu_e_collision::whole_integral(density* dens, double* results, bool net){
     if (eps_value == 0)
         for(int j = 0; j < 4; j++)
             results[j] = 0.;
     else{
+//        cout << "whole integral, populate F" << endl;
         populate_F(dens, net);
         
         double coeff = pow(Tcm, 5) * pow(_GF_, 2) / (16 * pow(2*_PI_, 3) * pow(eps_value,2 ));
         
         for(int i = 0; i < 4; i++){
+//            cout << "whole integral, R1" << endl;
             for(int q2 = 0; q2 < outer_dummy_vars->get_length(); q2++)
-                outer_vals->set_value(q2, R_elec_values[0][q2][0][NUE_Q2] / R_elec_values[0][q2][0][NUE_E2] * inner_integral(q2, i));
-            results[i] = outer_dummy_vars->integrate(outer_vals);
+                outer_vals->set_value(q2, R_elec_values[0][q2][0][NUE_Q2] / R_elec_values[0][q2][0][NUE_E2] * interior_integral(q2, i));
+            results[i] = outer_dummy_vars->integrate(outer_vals); //******* only doing R2 for now
+            
+//            cout << "whole integral, R2" << endl;
             
             for(int q3 = 0; q3 < outer_dummy_vars_2->get_length(); q3++)
-                outer_vals_2->set_value(q3, R_elec_values[1][q3][0][NUE_Q3] / R_elec_values[1][q3][0][NUE_E3] * inner_integral_2(q3, i));
+                outer_vals_2->set_value(q3, R_elec_values[1][q3][0][NUE_Q3] / R_elec_values[1][q3][0][NUE_E3] * interior_integral_2(q3, i));
                 
             results[i] += outer_dummy_vars_2->integrate(outer_vals_2);
             
             results[i] *= coeff;
         }
-        
     }
     return;
 }
 
 void nu_e_collision::compute_R(double Tcm, double T, double* results){
+    density* thermal = new density(eps, 0., 0.);
+    thermal->set_T_Tcm(T, Tcm);
+    
+    double net[4];
+    double frs[4];
+    
+//    cout << "compute_R, net" << endl;
+    whole_integral(thermal, net, true);
+//    cout << "compute_R, frs" << endl;
+    whole_integral(thermal, frs, false);
+    
+//    cout << "compute_R, net = " << net[0] << ", frs = " << frs[0] << endl;
+    for(int j = 0; j < 4; j+=3){
+        if (frs[j] == 0)
+            results[j%2] = _COMPUTE_R_ERROR_;
+        else
+            results[j%2] = abs(net[j] / frs[j]);
+       }
+    
+//    cout << "results " << results[0] << ", " << results[1] << endl;
+    delete thermal;
+
+//    cout << "done compute_R" << endl;
+
     return;
 
 }
@@ -1202,23 +1448,24 @@ void nu_e_collision::F_R2_for_p1(density* dens, bool net){
     double F0 = 0;
     three_vector* Fxyz = new three_vector();
     
-    double E2, E3;
-    
-    for(int q3 = 0; q3 < outer_dummy_vars->get_length(); q3++){
-        E3 = mom_to_eps(outer_dummy_vars->get_value(q3));
-    
-        for(int p4 = 0; p4 < inner_dummy_vars[q3]->get_length(); p4++){
-            E2 = E3 + inner_dummy_vars[q3]->get_value(p4) - eps_value;
+    for(int q3 = 0; q3 < outer_dummy_vars_2->get_length(); q3++){
+        for(int p4 = 0; p4 < inner_dummy_vars_2[q3]->get_length(); p4++){
+//            cout << "F_R2, " << p4 << " / " << inner_dummy_vars_2[q3]->get_length() << endl;
+//            cout << "*F_R2, " << R_elec_values[1][q3][p4][NUE_E2] << ", " <<  R_elec_values[1][q3][p4][NUE_E3] << endl;
             
-            F_LL_F_RR(dens, true, R_elec_values[1][q3][p4][NUE_E2], R_elec_values[1][q3][p4][NUE_E3], q3, p4, net, &F0, Fxyz);
+            F_LL_F_RR(dens, false, R_elec_values[1][q3][p4][NUE_E2], R_elec_values[1][q3][p4][NUE_E3], q3, p4, net, &F0, Fxyz);
+//            cout << "F_R2, F_LLRR done" << endl;
             
             F_values[8][q3][p4] = F0;
             F_values[9][q3][p4] = Fxyz->get_value(0);
             F_values[10][q3][p4] = Fxyz->get_value(1);
             F_values[11][q3][p4] = Fxyz->get_value(2);
             
-            F_LR_F_RL(dens, true, E2, E3, q3, p4, net, &F0, Fxyz);
             
+            F_LR_F_RL(dens, false, R_elec_values[1][q3][p4][NUE_E2], R_elec_values[1][q3][p4][NUE_E3], q3, p4, net, &F0, Fxyz);
+            
+//            cout << "F_R2, F_LRRL done" << endl;
+
             F_values[12][q3][p4] = 2 * F0;
             F_values[13][q3][p4] = 2 * Fxyz->get_value(0);
             F_values[14][q3][p4] = 2 * Fxyz->get_value(1);
@@ -1242,10 +1489,32 @@ void nu_e_collision::F_LL_F_RR(density* dens, bool is_R1, double E2, double E3, 
     p_1->convert_p_to_matrix(dens, neutrino, p1);
     minus_p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
     
-    get_inner_matrix(dens, inner_dummy_vars[outer_index]->get_value(inner_index), outer_index, inner_index, neutrino, p_4, true, is_R1);
+    double p4_energy;
+    if(is_R1)
+        p4_energy = inner_dummy_vars[outer_index]->get_value(inner_index);
+    else
+        p4_energy = inner_dummy_vars_2[outer_index]->get_value(inner_index);
+        
+/*    if (!is_R1 && eps_value + E2 != (E3 + p4_energy))
+        cout << "FLL, Delta E = " << eps_value + E2 - (E3 + p4_energy) << endl; */
+    
+    get_inner_matrix(dens, p4_energy, outer_index, inner_index, neutrino, p_4, true, is_R1);
     
     matrix* minus_p_4 = new matrix(p_4);
     minus_p_4->convert_this_to_identity_minus_this();
+    
+    double fwd = real(p_1->get_A0()) * f2 * (1-f3) * real(minus_p_4->get_A0());
+    double rev = real(p_4->get_A0()) * f3 * (1-f2) * real(minus_p_1->get_A0());
+    
+    if (!is_R1 && abs(1-fwd/rev) > 1.e-13 && (fwd > 1.e-10 || rev > 1.e-1) && false){
+        cout << E2 << "\t" << E3 << "\t" << p4_energy << "\t" << fwd << "\t" << rev << "\t" << 1 - fwd/rev << "; " << f2 << ",\t" << f3 << "\t" << p_4->get_A0() << endl;
+        cout << "**" << p4_energy << "\t" << inner_dummy_vars_2[outer_index]->get_value(0) << "\t" << inner_dummy_vars_2[outer_index]->get_value(inner_dummy_vars_2[outer_index]->get_length()-1) << endl;
+//        cout << inner_dummy_vars_2[outer_index]->get_need_interp(inner_index) << "\t" << inner_dummy_vars_2[outer_index]->get_interp_index(inner_index) << endl;
+
+        for(int j = 0; j < inner_dummy_vars_2[outer_index]->get_length(); j++)
+            cout << inner_dummy_vars_2[outer_index]->get_interp_index(j) << ", ";
+        cout << endl;
+    }
     
     matrix* F_dummy1 = new matrix();
     matrix* F_dummy2 = new matrix();
@@ -1292,7 +1561,7 @@ void nu_e_collision::F_LL_F_RR(density* dens, bool is_R1, double E2, double E3, 
     
     *F0 = 2*real(comp_F0);
     F->make_real(comp_F);
-    
+        
     delete F_dummy1;
     delete F_dummy2;
     delete F_dummy3;
@@ -1323,10 +1592,22 @@ void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, 
     p_1->convert_p_to_matrix(dens, neutrino, p1);
     minus_p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
     
-    get_inner_matrix(dens, inner_dummy_vars[outer_index]->get_value(inner_index), outer_index, inner_index, neutrino, p_4, true, is_R1);
+    double p4_energy;
+    if(is_R1)
+        p4_energy = inner_dummy_vars[outer_index]->get_value(inner_index);
+    else
+        p4_energy = inner_dummy_vars_2[outer_index]->get_value(inner_index);
+
+    get_inner_matrix(dens, p4_energy, outer_index, inner_index, neutrino, p_4, true, is_R1);
     
     matrix* minus_p_4 = new matrix(p_4);
+    
     minus_p_4->convert_this_to_identity_minus_this();
+    
+/*    if (!is_R1 && eps_value + E2 != (E3 + p4_energy))
+        cout << "FLR, Delta E = " << eps_value + E2 - (E3 + p4_energy) << endl;*/
+    
+//    cout << "FLR, " << minus_p_4->get_A0() << ", " << p_4->get_A0() << endl;
     
     /*
     F_dummy1 = G_L * rho_4
@@ -1374,6 +1655,9 @@ void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, 
     F_dummy9->multiply_by(f3 * (1-f2));
     F_dummy10->matrix_add(F_dummy6, F_dummy8);
     F_dummy10->multiply_by(f2 * (1-f3));
+
+//    cout << p_4->get_A0() << ", " << F_dummy9->get_A0() << ", " << F_dummy10->get_A0() << ", " << F_dummy9->get_A0() - F_dummy10->get_A0() << endl;
+
      
     if(net==true){
         F_dummy10->multiply_by(complex<double> (-1,0));
@@ -1389,6 +1673,7 @@ void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, 
     
     *F0 = 2*real(comp_F0);
     F->make_real(comp_F);
+    
     
     delete F_dummy1;
     delete F_dummy2;

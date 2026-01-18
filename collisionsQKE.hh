@@ -68,6 +68,8 @@ class collision_integral{
         virtual void compute_R(double, double, double*) = 0;
         void set_min_rate(density*);
         double get_min_rate();
+        
+        void show_idv(int, int); //(info, outer), info = 0 (values); 1 (need interp); 2 (interp index)
 };
 
 class electron_collision_integral : public collision_integral{
@@ -89,13 +91,16 @@ class electron_collision_integral : public collision_integral{
         double mom_to_eps(double);
         double eps_to_mom(double);
         
-        virtual double interior_integral_2(int, int);
+        virtual double interior_integral_2(int, int) = 0;
         
         double get_Tcm();
         void set_Tcm(double);
         
         using collision_integral::get_inner_matrix;
         void get_inner_matrix(density*, double, int, int, bool, matrix*, bool, bool);
+        
+        using collision_integral::show_idv;
+        void show_idv(int, int, int); //(R1/2, info, outer)
 };
 
 class nu_nu_collision : public collision_integral{
@@ -147,7 +152,7 @@ class nu_e_collision : public electron_collision_integral{
         
         void populate_F(density*, bool); 
         double interior_integral(int, int); 
-        double interior_integral_2(int, int)
+        double interior_integral_2(int, int);
         void whole_integral(density*, double*, bool); 
         
         void compute_R(double, double, double*);

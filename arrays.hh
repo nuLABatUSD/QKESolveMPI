@@ -6,7 +6,7 @@
 #include "base_arrays.hh"
 
 #define INNER_INTEGRAL_INFINITY -999.
-#define SUBDV_INTERP_SMALL 1.e-6
+#define SUBDV_INTERP_SMALL 1.e-12
 
 class dummy_vars;
 class dep_vars;

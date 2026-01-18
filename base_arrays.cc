@@ -131,7 +131,7 @@ int dummy_vars::bin_below(double x){
         pm = -1;
         
     int g;
-    for(int i = 0; i < N; i++){
+    for(int i = 1; i < N; i++){
         g = guess + pm * i;
         if (g == 0 || g == N-1)
             return g;
