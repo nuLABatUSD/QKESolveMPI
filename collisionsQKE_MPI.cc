@@ -9,7 +9,7 @@
 using std::cout;
 using std::endl;
 
-collisions::collisions(int rank, int num_ranks, linspace_and_gl* e){
+collisions::collisions(int rank, int num_ranks, linspace_and_gl* e, bool nu_nu, bool nu_e, bool nu_e_ann){
     myid = rank;
     numprocs = num_ranks;
     
@@ -19,47 +19,74 @@ collisions::collisions(int rank, int num_ranks, linspace_and_gl* e){
     num_integrators = 0;
     load_value = 0;
     
-    max_worker_bins = (2 * N_bins) / (numprocs - 1);
-    if(2*N_bins % (numprocs-1) != 0)
-        max_worker_bins++;
+    total_integrators = 2 * (nu_nu + nu_e + nu_e_ann) * N_bins;
     
+/*    max_worker_bins = total_integrators / (numprocs - 1);
+    if(total_integrators % (numprocs-1) != 0)
+        max_worker_bins++;
+*/    
     worker_values = new int*[numprocs];
     worker_result_indexes = new int*[numprocs];
+    
+    int** scat = new int*[numprocs];
     
     int k;
     for(int j = 1; j < numprocs; j++){
         worker_values[j] = new int[2];
         worker_values[j][0] = 0;
-        for(int i = j-1; i < N_bins * 2; i += numprocs-1)
+        for(int i = j-1; i < total_integrators; i += numprocs-1)
             worker_values[j][0]++;
         worker_result_indexes[j] = new int[worker_values[j][0]];
+        scat[j] = new int[worker_values[j][0]];
         
         k=0;
-        for(int i = j-1; i < N_bins * 2; i += numprocs-1){
-            worker_result_indexes[j][k] = i;
+        for(int i = j-1; i < total_integrators; i += numprocs-1){
+            worker_result_indexes[j][k] = i % (2 * N_bins);
+            
+            if (nu_nu){
+                if (i < 2 * N_bins)
+                    scat[j][k] = 0;
+                else if (i < 4 * N_bins){
+                    if(nu_e)
+                        scat[j][k] = 1;
+                    else
+                        scat[j][k] = 2;
+                }
+                else
+                    scat[j][k] = 2;
+            }
+            else{
+                if (i < 2 * N_bins){
+                    if (nu_e)
+                        scat[j][k] = 1;
+                    else
+                        scat[j][k] = 2;
+                }
+                else
+                    scat[j][k] = 2;
+            }
+            
+            
             k++;
         }
     }    
+    max_worker_bins = worker_values[1][0];
         
     if(myid != 0){
-/*        for(int i = myid-1; i < N_bins*2; i += numprocs-1)
-            num_integrators++;
-        integrators = new collision_integral*[num_integrators];
-        int j = 0;
-        for(int i = myid-1; i < N_bins*2; i += numprocs-1){
-            integrators[j] = new nu_nu_collision(i%N_bins, eps, i < N_bins);
-            load_value += integrators[j]->estimate_load();
-            j++;
-        }
-*/
         num_integrators = worker_values[myid][0];
         integrators = new collision_integral*[num_integrators];
         for(int j = 0; j < num_integrators; j++){
-//            cout << myid << ", " << j << ", " << worker_result_indexes[myid][j] << endl;
-            integrators[j] = new nu_e_collision(worker_result_indexes[myid][j] % N_bins, eps, worker_result_indexes[myid][j] < N_bins, 32.);
-//            integrators[j] = new nu_nu_collision(worker_result_indexes[myid][j] % N_bins, eps, worker_result_indexes[myid][j] < N_bins);
+            switch(scat[myid][j]){
+                case(0):
+                    integrators[j] = new nu_nu_collision(worker_result_indexes[myid][j] % N_bins, eps, worker_result_indexes[myid][j] < N_bins);                
+                    break;
+                case(1):
+                    integrators[j] = new nu_e_collision(worker_result_indexes[myid][j] % N_bins, eps, worker_result_indexes[myid][j] < N_bins, 32.);                
+                    break;
+                case(2):
+                    break;
+            }
             load_value += integrators[j]->estimate_load();
-            
         }
     }
     else{

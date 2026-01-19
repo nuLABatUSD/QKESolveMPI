@@ -831,7 +831,6 @@ void nu_nu_collision::compute_R(double Tcm, double T, double* results){
         else
             results[j%2] = abs(net[j] / frs[j]);
        }
-    
     delete thermal;
 }
 
@@ -1398,12 +1397,9 @@ void nu_e_collision::compute_R(double Tcm, double T, double* results){
     double net[4];
     double frs[4];
     
-//    cout << "compute_R, net" << endl;
     whole_integral(thermal, net, true);
-//    cout << "compute_R, frs" << endl;
     whole_integral(thermal, frs, false);
     
-//    cout << "compute_R, net = " << net[0] << ", frs = " << frs[0] << endl;
     for(int j = 0; j < 4; j+=3){
         if (frs[j] == 0)
             results[j%2] = _COMPUTE_R_ERROR_;
@@ -1411,10 +1407,7 @@ void nu_e_collision::compute_R(double Tcm, double T, double* results){
             results[j%2] = abs(net[j] / frs[j]);
        }
     
-//    cout << "results " << results[0] << ", " << results[1] << endl;
     delete thermal;
-
-//    cout << "done compute_R" << endl;
 
     return;
 

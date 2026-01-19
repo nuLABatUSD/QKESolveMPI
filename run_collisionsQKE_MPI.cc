@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     int N_bins = eps->get_length();
     
 
-    collisions* C_MPI = new collisions(myid, numprocs, eps);
+    collisions* C_MPI = new collisions(myid, numprocs, eps, true, true, false);
         
     double* R_values = new double[N_bins * 4];
 
