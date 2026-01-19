@@ -40,6 +40,11 @@ matrix::matrix(bool id){
     
 }
 
+matrix::matrix(matrix* c){
+    A0 = c->get_A0();
+    A = new complex_three_vector(c->get_A());
+}
+
 complex<double> matrix::get_A0(){
     return A0;
 }
