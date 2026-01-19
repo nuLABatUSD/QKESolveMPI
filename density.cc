@@ -264,7 +264,7 @@ void density::set_T_Tcm(double T, double Tcm){
 
 void density::set_value(int b, bool nu, int comp, double val){
     int index = b;
-    if (nu)
+    if (!nu)
         index += N_bins;
     set_value(4 * index + comp, val);
 }

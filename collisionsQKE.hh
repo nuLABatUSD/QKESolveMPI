@@ -46,6 +46,12 @@ class collision_integral{
         
         double min_rate;
         
+        virtual void populate_F(density*, bool) = 0; //density* dens, bool net
+        virtual double interior_integral(int, int) = 0; //int p2, int which_term
+        
+        void get_inner_matrix(density*, double, sub_dummy_vars*, int, bool, matrix*, bool);
+        void get_inner_matrix(density*, double, int, int, bool, matrix*, bool);
+
     public:
         collision_integral(int, linspace_and_gl*, bool); //(int bin, dummy_vars* eps);
         virtual ~collision_integral();
@@ -58,12 +64,7 @@ class collision_integral{
         
         bool is_neutrino();
         
-        virtual void populate_F(density*, bool) = 0; //density* dens, bool net
-        virtual double interior_integral(int, int) = 0; //int p2, int which_term
         virtual void whole_integral(density*, double*, bool) = 0; //density* dens, double* results, bool net
-        
-        void get_inner_matrix(density*, double, sub_dummy_vars*, int, bool, matrix*, bool);
-        void get_inner_matrix(density*, double, int, int, bool, matrix*, bool);
         
         virtual void compute_R(double, double, double*) = 0;
         void set_min_rate(density*);
@@ -84,6 +85,11 @@ class electron_collision_integral : public collision_integral{
         
         matrix* G_L;
         matrix* G_R;
+
+        virtual double interior_integral_2(int, int) = 0;
+        using collision_integral::get_inner_matrix;
+        void get_inner_matrix(density*, double, int, int, bool, matrix*, bool, bool);
+
     public:
         electron_collision_integral(int, linspace_and_gl*, bool, double);
         virtual ~electron_collision_integral();
@@ -91,13 +97,9 @@ class electron_collision_integral : public collision_integral{
         double mom_to_eps(double);
         double eps_to_mom(double);
         
-        virtual double interior_integral_2(int, int) = 0;
-        
         double get_Tcm();
         void set_Tcm(double);
         
-        using collision_integral::get_inner_matrix;
-        void get_inner_matrix(density*, double, int, int, bool, matrix*, bool, bool);
         
         using collision_integral::show_idv;
         void show_idv(int, int, int); //(R1/2, info, outer)
@@ -108,19 +110,10 @@ class nu_nu_collision : public collision_integral{
         sub_dummy_vars** p4_values;
             
         const int load_factor = 4 + 4; // Fvvsc plus Fvvbarsc
-    public:
-        nu_nu_collision(int, linspace_and_gl*, bool);
-        ~nu_nu_collision();
-        
-        int estimate_load();
-        
         void populate_F(density*, bool); 
         double interior_integral(int, int); 
         double interior_integral_2(int, int);
-        void whole_integral(density*, double*, bool); 
-        
-        void compute_R(double, double, double*);
-        
+
         double J(double, double, double);
         double K(double, double, double);
         
@@ -136,6 +129,16 @@ class nu_nu_collision : public collision_integral{
         void Fvvbarsc_components_term_2(density*, int,int, double*, three_vector*);
         void Fvvbarsc_components(density*, int, int, double*, three_vector*, bool);
         void Fvvbarsc_for_p1(density*, bool);
+    public:
+        nu_nu_collision(int, linspace_and_gl*, bool);
+        ~nu_nu_collision();
+        
+        int estimate_load();
+        
+        void whole_integral(density*, double*, bool); 
+        
+        void compute_R(double, double, double*);
+        
 };
 
 
@@ -144,19 +147,10 @@ class nu_e_collision : public electron_collision_integral{
         double**** R_elec_values;
         double*** epslim_values;
         
-    public:
-        nu_e_collision(int, linspace_and_gl*, bool, double);
-        ~nu_e_collision();
-
-        int estimate_load();
-        
         void populate_F(density*, bool); 
         double interior_integral(int, int); 
         double interior_integral_2(int, int);
-        void whole_integral(density*, double*, bool); 
-        
-        void compute_R(double, double, double*);
-        
+
         double M_11(int, double*);
         double M_12(int, double*);
         double M_21(int, double*);
@@ -170,6 +164,16 @@ class nu_e_collision : public electron_collision_integral{
         
         void F_R1_for_p1(density*, bool);
         void F_R2_for_p1(density*, bool);
+    public:
+        nu_e_collision(int, linspace_and_gl*, bool, double);
+        ~nu_e_collision();
+
+        int estimate_load();
+        
+        void whole_integral(density*, double*, bool); 
+        
+        void compute_R(double, double, double*);
+        
 };
 
 double J1(double, double, double);
