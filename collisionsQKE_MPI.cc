@@ -94,15 +94,6 @@ collisions::collisions(int rank, int num_ranks, linspace_and_gl* e, bool nu_nu, 
 }
 
 collisions::~collisions(){
-/*    if(myid == 0){
-        for(int i = 1; i < numprocs; i++){
-            cout << i << ", " ;
-            for(int j = 0; j < worker_values[i][0]; j++)
-                cout << worker_result_indexes[i][j] << ", ";
-            cout << endl;
-        }
-            
-    }*/
     delete eps;
 
     for(int i = 1; i < numprocs; i++){
@@ -198,7 +189,10 @@ void collisions::C(density* dens, density* output, bool net){
        else{
            for(int j = 0; j < num_integrators; j++){
                 tag = worker_result_indexes[myid][j];
-               integrators[j]->whole_integral(dens, dummy_int, net);
+                if(net)
+                    integrators[j]->C(dens, dummy_int);
+                else
+                   integrators[j]->whole_integral(dens, dummy_int, net);
                MPI_Send(dummy_int, 4, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
            }
        }

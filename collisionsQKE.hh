@@ -46,11 +46,16 @@ class collision_integral{
         
         double min_rate;
         
+        matrix** mat_p;
+        matrix** mat_minus_p;
+        matrix** F_dummy;
+        
         virtual void populate_F(density*, bool) = 0; //density* dens, bool net
         virtual double interior_integral(int, int) = 0; //int p2, int which_term
         
         void get_inner_matrix(density*, double, sub_dummy_vars*, int, bool, matrix*, bool);
         void get_inner_matrix(density*, double, int, int, bool, matrix*, bool);
+        
 
     public:
         collision_integral(int, linspace_and_gl*, bool); //(int bin, dummy_vars* eps);
@@ -65,6 +70,8 @@ class collision_integral{
         bool is_neutrino();
         
         virtual void whole_integral(density*, double*, bool) = 0; //density* dens, double* results, bool net
+        void C(density*, double*);
+
         
         virtual void compute_R(double, double, double*) = 0;
         void set_min_rate(density*);

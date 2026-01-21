@@ -134,6 +134,22 @@ void matrix::matrix_multiply(matrix* C1, matrix* C2){
     
 }
 
+void matrix::set_identity(complex <double> c){
+    A0 = c;
+    A->multiply_by(complex<double>(0.));
+}
+
+void matrix::copy(matrix* m){
+    A0 = m->get_A0();
+    for(int i = 0; i < 3; i++)
+        A->set_value(i, m->get_A()->get_value(i));
+}
+
+void matrix::identity_minus_copy(matrix* m){
+    copy(m);
+    convert_this_to_identity_minus_this();
+}
+
 matrix::~matrix(){
    delete A; 
 }

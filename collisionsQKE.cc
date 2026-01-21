@@ -29,6 +29,18 @@ collision_integral::collision_integral(int b, linspace_and_gl* e, bool nu){
     
     min_rate = 0.;
     
+    mat_p = new matrix*[5];
+    mat_minus_p = new matrix*[5];
+    F_dummy = new matrix*[12];
+    
+    for(int i = 1; i < 5; i++){
+        mat_p[i] = new matrix;
+        mat_minus_p[i] = new matrix;
+    }
+    
+    for(int i = 1; i < 12; i++)
+        F_dummy[i] = new matrix;
+    
 /**********************************
 
     outer_vals and outer_dummy_vars; inner_vals and inner_dummy_vars; F_values matrix are allocated in the individual collision integrals
@@ -39,10 +51,21 @@ collision_integral::collision_integral(int b, linspace_and_gl* e, bool nu){
 
 collision_integral::~collision_integral(){
     delete eps;
+    
 
     if (eps_value == 0.)
         return;
     
+    for(int i = 1; i < 5; i++){
+        delete mat_p[i];
+        delete mat_minus_p[i];
+    }
+    for(int i = 1; i < 12; i++)
+        delete F_dummy[i];
+    delete[] F_dummy;
+    delete[] mat_p;
+    delete[] mat_minus_p;
+
     int N_outer = outer_dummy_vars->get_length();
     
     for(int i = 0; i < N_outer; i++){
@@ -93,6 +116,14 @@ void collision_integral::set_min_rate(density* dens){
 
 double collision_integral::get_min_rate()
 {   return min_rate;}
+
+void collision_integral::C(density* dens, double* results){
+    whole_integral(dens, results, true);
+    for(int i = 0; i < 4; i++){
+        if(abs(results[i]) < min_rate)
+            results[i] = 0.;
+    }
+}
 
 void collision_integral::get_inner_matrix(density* dens, double nrg, sub_dummy_vars* sdv, int inner_index, bool nu, matrix* result, bool use_matrix){ 
 //    cout << "call base get_inner_matrix" << endl;
@@ -287,7 +318,6 @@ int nu_nu_collision::estimate_load(){
         iter += inner_dummy_vars[i]->bin_below(eps_value + outer_dummy_vars->get_value(i));
         
     return iter * load_factor;
-
 }
 
 void nu_nu_collision::get_p4_matrix(density* dens, int p2, int p3, bool nu, matrix* result, bool use_matrix){
@@ -302,7 +332,9 @@ NOTE: populate_F is built upon p1, p2, p3 all being at the bins (no interpolatio
 
 **********************************/
 
-void nu_nu_collision::populate_F(density* dens, bool net){    
+void nu_nu_collision::populate_F(density* dens, bool net){
+    mat_p[1]->convert_p_to_matrix(dens, neutrino, p1);
+    mat_minus_p[1]->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
     Fvvsc_for_p1(dens, net);
     Fvvbarsc_for_p1(dens, net);
 }
@@ -311,12 +343,18 @@ void nu_nu_collision::Fvvsc_for_p1(density* dens, bool net){
     double F0 = 0;
     three_vector* Fxyz = new three_vector();
     for(int p2=0; p2<outer_dummy_vars->get_len(); p2++){
+        mat_p[2]->convert_p_to_matrix(dens, neutrino, p2);
+        mat_minus_p[2]->convert_p_to_identity_minus_matrix(dens, neutrino, p2);
+        
         for(int p3=0; p3<inner_dummy_vars[p2]->get_len(); p3++){
             //this clause means F is filled in only if p3_energy is less than p1_energy+p2_energy
             //this won't affect results for p3 objects that go up to p1+p2, and this is useful in trap rule when we want to set integrand to 0 past p1+p2
             if(inner_dummy_vars[p2]->get_value(p3) <= eps_value + outer_dummy_vars->get_value(p2)){
                 //if p4_energy>=0
                 if(eps_value+outer_dummy_vars->get_value(p2)-inner_dummy_vars[p2]->get_value(p3)>=0){
+                    mat_p[3]->convert_p_to_matrix(dens, neutrino, p3);
+                    mat_minus_p[3]->convert_p_to_identity_minus_matrix(dens, neutrino, p3);
+                
                     Fvvsc_components(dens, p2, p3, &F0, Fxyz, net);
 
                     //factor of 1/4 corrects for use of Froustey's matrix form statistical factor in BURST integral
@@ -335,12 +373,17 @@ void nu_nu_collision::Fvvbarsc_for_p1(density* dens, bool net){
     double F0 = 0;
     three_vector* Fxyz = new three_vector();
     for(int p2=0; p2<outer_dummy_vars->get_len(); p2++){
+        mat_p[2]->convert_p_to_matrix(dens, not neutrino, p2);
+        mat_minus_p[2]->convert_p_to_identity_minus_matrix(dens, not neutrino, p2);
         for(int p3=0; p3<inner_dummy_vars[p2]->get_len(); p3++){
             //only if p3_energy is less than p1_energy+p2_energy is this called--> will make integrand 0 past p1+p2 for trap 
             //won't affect results for other dummy var objects
             if(inner_dummy_vars[p2]->get_value(p3) <= eps_value + outer_dummy_vars->get_value(p2)){
                 //p4_energy must be >=0
                 if(eps_value + outer_dummy_vars->get_value(p2) - inner_dummy_vars[p2]->get_value(p3)>=0){
+                    mat_p[3]->convert_p_to_matrix(dens, not neutrino, p3);
+                    mat_minus_p[3]->convert_p_to_identity_minus_matrix(dens, not neutrino, p3);
+
                     Fvvbarsc_components(dens, p2, p3, &F0, Fxyz, net);
 
                     F_values[4][p2][p3] = F0;
@@ -405,18 +448,23 @@ void nu_nu_collision::Fvvbarsc_components(density* dens, int p2, int p3, double*
 }
 
 
-
 void nu_nu_collision::Fvvsc_components_term_1(density* dens, int p2, int p3, double* F0, three_vector* F){
-    matrix* p_1 = new matrix();
-    matrix* p_2 = new matrix();
-    matrix* p_3 = new matrix();
-    matrix* p_4 = new matrix();
+//    matrix* p_1 = new matrix();
+//    matrix* p_2 = new matrix();
+//    matrix* p_3 = new matrix();
+//    matrix* p_4 = new matrix();
     
-    p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
-    p_2->convert_p_to_identity_minus_matrix(dens, neutrino, p2);
+//    p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
+//    p_2->convert_p_to_identity_minus_matrix(dens, neutrino, p2);
 
-    get_inner_matrix(dens, inner_dummy_vars[p2]->get_value(p3), p2, p3, neutrino, p_3, true);
-    get_p4_matrix(dens, p2, p3, neutrino, p_4, true);
+//    get_inner_matrix(dens, inner_dummy_vars[p2]->get_value(p3), p2, p3, neutrino, p_3, true);
+
+    get_p4_matrix(dens, p2, p3, neutrino, mat_p[4], true);
+    
+    matrix* p_1 = mat_minus_p[1];
+    matrix* p_2 = mat_minus_p[2];
+    matrix* p_3 = mat_p[3];
+    matrix* p_4 = mat_p[4];
     
     /*
        p_1 = 1-rho_1
@@ -433,54 +481,60 @@ void nu_nu_collision::Fvvsc_components_term_1(density* dens, int p2, int p3, dou
        
     */
 
-    matrix* F_dummy1 = new matrix();
-    F_dummy1->matrix_multiply(p_2, p_4);
+//    matrix* F_dummy1 = new matrix();
+    F_dummy[1]->matrix_multiply(p_2, p_4);
 
-    matrix* id = new matrix(true);
-    id->multiply_by(F_dummy1->get_A0()*(complex<double> (2,0)));
+//    matrix* id = new matrix(true);
+    F_dummy[10]->set_identity(F_dummy[1]->get_A0()*(complex<double> (2,0)));
 
-    matrix* F_dummy2 = new matrix();
-    F_dummy2->matrix_add(F_dummy1, id);
+//    matrix* F_dummy2 = new matrix();
+    F_dummy[2]->matrix_add(F_dummy[1], F_dummy[10]);
 
-    matrix* F_dummy3 = new matrix();
-    F_dummy3->matrix_multiply(p_3, F_dummy2);
+//    matrix* F_dummy3 = new matrix();
+    F_dummy[3]->matrix_multiply(p_3, F_dummy[2]);
 
-    matrix* F_dummy4 = new matrix();
-    F_dummy4->matrix_multiply(p_1, F_dummy3);
+//    matrix* F_dummy4 = new matrix();
+    F_dummy[4]->matrix_multiply(p_1, F_dummy[3]);
 
-    complex<double> comp_F0 = F_dummy4->get_A0();
-    complex_three_vector* comp_F = F_dummy4->get_A();
+    complex<double> comp_F0 = F_dummy[4]->get_A0();
+    complex_three_vector* comp_F = F_dummy[4]->get_A();
 
     comp_F->multiply_by(2);
 
     *F0 = 2*real(comp_F0);
     F->make_real(comp_F);
 
-    delete F_dummy1;
-    delete F_dummy2;
-    delete id;
-    delete F_dummy3;
-    delete F_dummy4;
-    delete p_1;
-    delete p_2;
-    delete p_3;
-    delete p_4;
+//    delete F_dummy1;
+//    delete F_dummy2;
+//    delete id;
+//   delete F_dummy3;
+//   delete F_dummy4;
+//    delete p_1;
+//    delete p_2;
+//    delete p_3;
+//    delete p_4;
 
 }
 
 
 void nu_nu_collision::Fvvsc_components_term_2(density* dens, int p2, int p3, double* F0, three_vector* F){
-    matrix* p_1 = new matrix();
-    matrix* p_2 = new matrix();
-    matrix* p_3 = new matrix();
+//    matrix* p_1 = new matrix();
+//    matrix* p_2 = new matrix();
+//    matrix* p_3 = new matrix();
 
-    matrix* p_4 = new matrix(true);
-    p_1->convert_p_to_matrix(dens, neutrino, p1);
-    p_2->convert_p_to_matrix(dens, neutrino, p2);
+//    matrix* p_4 = new matrix(true);
+//    p_1->convert_p_to_matrix(dens, neutrino, p1);
+//    p_2->convert_p_to_matrix(dens, neutrino, p2);
     
-    get_inner_matrix(dens, inner_dummy_vars[p2]->get_value(p3), p2, p3, neutrino, p_3, false);
+//    get_inner_matrix(dens, inner_dummy_vars[p2]->get_value(p3), p2, p3, neutrino, p_3, false);
 
-    get_p4_matrix(dens, p2, p3, neutrino, p_4, false);
+    get_p4_matrix(dens, p2, p3, neutrino, mat_minus_p[4], false);
+
+    matrix* p_1 = mat_p[1];
+    matrix* p_2 = mat_p[2];
+    matrix* p_3 = mat_minus_p[3];
+    matrix* p_4 = mat_minus_p[4];
+
     
 
     /*
@@ -498,53 +552,62 @@ void nu_nu_collision::Fvvsc_components_term_2(density* dens, int p2, int p3, dou
 
     */
 
-    matrix* F_dummy1 = new matrix();
-    F_dummy1->matrix_multiply(p_2, p_4);
+//    matrix* F_dummy1 = new matrix();
+    F_dummy[1]->matrix_multiply(p_2, p_4);
 
-    matrix* id = new matrix(true);
-    id->multiply_by(F_dummy1->get_A0()*(complex<double> (2,0)));
+//    matrix* id = new matrix(true);
+    F_dummy[10]->set_identity(F_dummy[1]->get_A0()*(complex<double> (2,0)));
 
-    matrix* F_dummy2 = new matrix();
-    F_dummy2->matrix_add(F_dummy1, id);
+//    matrix* F_dummy2 = new matrix();
+    F_dummy[2]->matrix_add(F_dummy[1], F_dummy[10]);
 
-    matrix* F_dummy3 = new matrix();
-    F_dummy3->matrix_multiply(p_3,F_dummy2);
+//    matrix* F_dummy3 = new matrix();
+    F_dummy[3]->matrix_multiply(p_3, F_dummy[2]);
 
-    matrix* F_dummy4 = new matrix();
-    F_dummy4->matrix_multiply(p_1,F_dummy3); 
+//    matrix* F_dummy4 = new matrix();
+    F_dummy[4]->matrix_multiply(p_1, F_dummy[3]); 
 
 
-    complex<double> comp_F0 = F_dummy4->get_A0();
-    complex_three_vector* comp_F = F_dummy4->get_A();
+    complex<double> comp_F0 = F_dummy[4]->get_A0();
+    complex_three_vector* comp_F = F_dummy[4]->get_A();
 
     comp_F->multiply_by(2);
 
     *F0 = 2*real(comp_F0);
     F->make_real(comp_F);
 
-    delete F_dummy1;
-    delete F_dummy2;
-    delete id;
-    delete F_dummy3;
-    delete F_dummy4;
-    delete p_1;
-    delete p_2;
-    delete p_3;
-    delete p_4;
+//    delete F_dummy1;
+//    delete F_dummy2;
+//    delete id;
+//    delete F_dummy3;
+//    delete F_dummy4;
+//    delete p_1;
+//    delete p_2;
+//    delete p_3;
+//    delete p_4;
 }
 
 void nu_nu_collision::Fvvbarsc_components_term_1(density* dens, int p2, int p3, double* F0, three_vector* F){
-    matrix* p_1 = new matrix();
-    matrix* p_2 = new matrix();
-    matrix* p_3 = new matrix();
+//    matrix* p_1 = new matrix();
+//    matrix* p_2 = new matrix();
+//    matrix* p_3 = new matrix();
 
-    matrix* p_4 = new matrix(true);
-    p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
-    p_2->convert_p_to_identity_minus_matrix(dens, not neutrino, p2);
+//    matrix* p_4 = new matrix(true);
+
+//    p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
+//    p_2->convert_p_to_identity_minus_matrix(dens, not neutrino, p2);
     
-    get_inner_matrix(dens, inner_dummy_vars[p2]->get_value(p3), p2, p3, not neutrino, p_3, true);
+//    get_inner_matrix(dens, inner_dummy_vars[p2]->get_value(p3), p2, p3, not neutrino, p_3, true);
 
-    get_p4_matrix(dens, p2, p3, neutrino, p_4, true);
+    get_p4_matrix(dens, p2, p3, neutrino, mat_p[4], true);
+
+    matrix* p_1 = mat_minus_p[1];
+    matrix* p_2 = mat_minus_p[2];
+    matrix* p_3 = mat_p[3];
+    matrix* p_4 = mat_p[4];
+
+
+
     
     
     /*
@@ -565,41 +628,41 @@ void nu_nu_collision::Fvvbarsc_components_term_1(density* dens, int p2, int p3, 
        F_dummy9 = F_dummy4+F_dummy8
     */
 
-    matrix* F_dummy1 = new matrix();
-    F_dummy1->matrix_multiply(p_3, p_2);
+//    matrix* F_dummy1 = new matrix();
+    F_dummy[1]->matrix_multiply(p_3, p_2);
 
-    matrix* id1 = new matrix(true);
-    id1->multiply_by(F_dummy1->get_A0()*(complex<double> (2,0)));
+//    matrix* id1 = new matrix(true);
+    F_dummy[10]->set_identity(F_dummy[1]->get_A0()*(complex<double> (2,0)));
 
-    matrix* F_dummy2 = new matrix();
-    F_dummy2->matrix_add(F_dummy1, id1);
+//    matrix* F_dummy2 = new matrix();
+    F_dummy[2]->matrix_add(F_dummy[1], F_dummy[10]);
 
-    matrix* F_dummy3 = new matrix();
-    F_dummy3->matrix_multiply(p_1, p_4);
+//    matrix* F_dummy3 = new matrix();
+    F_dummy[3]->matrix_multiply(p_1, p_4);
 
-    matrix* F_dummy4 = new matrix();
-    F_dummy4->matrix_multiply(F_dummy3, F_dummy2);
+//    matrix* F_dummy4 = new matrix();
+    F_dummy[4]->matrix_multiply(F_dummy[3], F_dummy[2]);
 
-    matrix* F_dummy5 = new matrix();
-    F_dummy5->matrix_multiply(p_3, p_4);
+//    matrix* F_dummy5 = new matrix();
+    F_dummy[5]->matrix_multiply(p_3, p_4);
 
-    matrix* id2 = new matrix(true);
-    id2->multiply_by(F_dummy5->get_A0()*(complex<double> (2,0)));
+//    matrix* id2 = new matrix(true);
+    F_dummy[11]->set_identity(F_dummy[5]->get_A0()*(complex<double> (2,0)));
 
-    matrix* F_dummy6 = new matrix();
-    F_dummy6->matrix_add(F_dummy5, id2);
+//    matrix* F_dummy6 = new matrix();
+    F_dummy[6]->matrix_add(F_dummy[5], F_dummy[11]);
 
-    matrix* F_dummy7 = new matrix();
-    F_dummy7->matrix_multiply(p_1, p_2);
+//    matrix* F_dummy7 = new matrix();
+    F_dummy[7]->matrix_multiply(p_1, p_2);
 
-    matrix* F_dummy8 = new matrix();
-    F_dummy8->matrix_multiply(F_dummy7, F_dummy6);
+//    matrix* F_dummy8 = new matrix();
+    F_dummy[8]->matrix_multiply(F_dummy[7], F_dummy[6]);
 
-    matrix* F_dummy9 = new matrix();
-    F_dummy9->matrix_add(F_dummy4, F_dummy8);
+//    matrix* F_dummy9 = new matrix();
+    F_dummy[9]->matrix_add(F_dummy[4], F_dummy[8]);
 
-    complex<double> comp_F0 = F_dummy9->get_A0();
-    complex_three_vector* comp_F = F_dummy9->get_A();
+    complex<double> comp_F0 = F_dummy[9]->get_A0();
+    complex_three_vector* comp_F = F_dummy[9]->get_A();
 
     comp_F->multiply_by(2);
 
@@ -607,7 +670,7 @@ void nu_nu_collision::Fvvbarsc_components_term_1(density* dens, int p2, int p3, 
     F->make_real(comp_F);
     
 
-    delete F_dummy1;
+/*    delete F_dummy1;
     delete F_dummy2;
     delete F_dummy3;
     delete F_dummy4;
@@ -617,26 +680,31 @@ void nu_nu_collision::Fvvbarsc_components_term_1(density* dens, int p2, int p3, 
     delete F_dummy8;
     delete F_dummy9;
     delete id1;
-    delete id2;
-    delete p_1;
-    delete p_2;
-    delete p_3;
-    delete p_4;    
+    delete id2;*/
+//    delete p_1;
+//    delete p_2;
+//    delete p_3;
+//    delete p_4;    
 }
 
 void nu_nu_collision::Fvvbarsc_components_term_2(density* dens, int p2, int p3, double* F0, three_vector* F){
-    matrix* p_1 = new matrix();
-    matrix* p_2 = new matrix();
-    matrix* p_3 = new matrix();
+//    matrix* p_1 = new matrix();
+//    matrix* p_2 = new matrix();
+//    matrix* p_3 = new matrix();
 
-    matrix* p_4 = new matrix(true);
-    p_1->convert_p_to_matrix(dens, neutrino, p1);
-    p_2->convert_p_to_matrix(dens, not neutrino, p2);
+//    matrix* p_4 = new matrix(true);
+//    p_1->convert_p_to_matrix(dens, neutrino, p1);
+//    p_2->convert_p_to_matrix(dens, not neutrino, p2);
     
-    get_inner_matrix(dens, inner_dummy_vars[p2]->get_value(p3), p2, p3, not neutrino, p_3, false);
+//    get_inner_matrix(dens, inner_dummy_vars[p2]->get_value(p3), p2, p3, not neutrino, p_3, false);
 
-    get_p4_matrix(dens, p2, p3, neutrino, p_4, false);
+
+    get_p4_matrix(dens, p2, p3, neutrino, mat_minus_p[4], false);
     
+    matrix* p_1 = mat_p[1];
+    matrix* p_2 = mat_p[2];
+    matrix* p_3 = mat_minus_p[3];
+    matrix* p_4 = mat_minus_p[4];
 
     /*
        F_dummy1 = (1-rho_3)(rho_2)
@@ -656,48 +724,48 @@ void nu_nu_collision::Fvvbarsc_components_term_2(density* dens, int p2, int p3, 
        F_dummy9 = F_dummy4+F_dummy8
     */
 
-    matrix* F_dummy1 = new matrix();
-    F_dummy1->matrix_multiply(p_3, p_2);
+//    matrix* F_dummy1 = new matrix();
+    F_dummy[1]->matrix_multiply(p_3, p_2);
 
-    matrix* id1 = new matrix(true);
-    id1->multiply_by(F_dummy1->get_A0()*(complex<double> (2,0)));
+//    matrix* id1 = new matrix(true);
+    F_dummy[10]->set_identity(F_dummy[1]->get_A0()*(complex<double> (2,0)));
 
-    matrix* F_dummy2 = new matrix();
-    F_dummy2->matrix_add(F_dummy1, id1);
+//    matrix* F_dummy2 = new matrix();
+    F_dummy[2]->matrix_add(F_dummy[1], F_dummy[10]);
 
-    matrix* F_dummy3 = new matrix();
-    F_dummy3->matrix_multiply(p_1, p_4);
+//    matrix* F_dummy3 = new matrix();
+    F_dummy[3]->matrix_multiply(p_1, p_4);
 
-    matrix* F_dummy4 = new matrix();
-    F_dummy4->matrix_multiply(F_dummy3, F_dummy2);
+//    matrix* F_dummy4 = new matrix();
+    F_dummy[4]->matrix_multiply(F_dummy[3], F_dummy[2]);
 
-    matrix* F_dummy5 = new matrix();
-    F_dummy5->matrix_multiply(p_3, p_4);
+//    matrix* F_dummy5 = new matrix();
+    F_dummy[5]->matrix_multiply(p_3, p_4);
 
-    matrix* id2 = new matrix(true);
-    id2->multiply_by(F_dummy5->get_A0()*(complex<double> (2,0)));
+//    matrix* id2 = new matrix(true);
+    F_dummy[11]->set_identity(F_dummy[5]->get_A0()*(complex<double> (2,0)));
 
-    matrix* F_dummy6 = new matrix();
-    F_dummy6->matrix_add(F_dummy5, id2);
+//    matrix* F_dummy6 = new matrix();
+    F_dummy[6]->matrix_add(F_dummy[5], F_dummy[11]);
 
-    matrix* F_dummy7 = new matrix();
-    F_dummy7->matrix_multiply(p_1, p_2);
+//    matrix* F_dummy7 = new matrix();
+    F_dummy[7]->matrix_multiply(p_1, p_2);
 
-    matrix* F_dummy8 = new matrix();
-    F_dummy8->matrix_multiply(F_dummy7, F_dummy6);
+//    matrix* F_dummy8 = new matrix();
+    F_dummy[8]->matrix_multiply(F_dummy[7], F_dummy[6]);
 
-    matrix* F_dummy9 = new matrix();
-    F_dummy9->matrix_add(F_dummy4, F_dummy8);
+//    matrix* F_dummy9 = new matrix();
+    F_dummy[9]->matrix_add(F_dummy[4], F_dummy[8]);
 
-    complex<double> comp_F0 = F_dummy9->get_A0();
-    complex_three_vector* comp_F = F_dummy9->get_A();
+    complex<double> comp_F0 = F_dummy[9]->get_A0();
+    complex_three_vector* comp_F = F_dummy[9]->get_A();
 
     comp_F->multiply_by(2);
 
     *F0 = 2*real(comp_F0);
     F->make_real(comp_F);
 
-    delete F_dummy1;
+/*    delete F_dummy1;
     delete F_dummy2;
     delete F_dummy3;
     delete F_dummy4;
@@ -707,11 +775,11 @@ void nu_nu_collision::Fvvbarsc_components_term_2(density* dens, int p2, int p3, 
     delete F_dummy8;
     delete F_dummy9;
     delete id1;
-    delete id2;
-    delete p_1;
-    delete p_2;
-    delete p_3;
-    delete p_4;
+    delete id2;*/
+//    delete p_1;
+//    delete p_2;
+//    delete p_3;
+//    delete p_4;
 }
 
 double nu_nu_collision::interior_integral(int p2, int which_term){
@@ -809,8 +877,6 @@ void nu_nu_collision::whole_integral(density* dens, double* results, bool net){
                 outer_vals->set_value(p2, interior_integral(p2, j));
                 
             results[j] = coeff * outer_dummy_vars->integrate(outer_vals);
-            if (abs(results[j]) < min_rate)
-                results[j] = 0.;
         }
     }
 }
@@ -1047,11 +1113,11 @@ int nu_e_collision::estimate_load(){
 }
 
 void nu_e_collision::populate_F(density* dens, bool net){
-//    cout << "populate_F, R1" << endl;
+    mat_p[1]->convert_p_to_matrix(dens, neutrino, p1);
+    mat_minus_p[1]->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
+    
     F_R1_for_p1(dens, net);
-//    cout << "populate_F, R2" << endl;
     F_R2_for_p1(dens, net);
-//    cout << "populate_F, done" << endl;
     return;
 }
 
@@ -1475,28 +1541,32 @@ void nu_e_collision::F_LL_F_RR(density* dens, bool is_R1, double E2, double E3, 
     double f2 = 1 / (exp(E2/T__Tcm)+1);
     double f3 = 1 / (exp(E3/T__Tcm)+1);
     
-    matrix* p_1 = new matrix();
-    matrix* minus_p_1 = new matrix();
-    matrix* p_4 = new matrix();
+//    matrix* p_1 = new matrix();
+//    matrix* minus_p_1 = new matrix();
+//    matrix* p_4 = new matrix();
     
-    p_1->convert_p_to_matrix(dens, neutrino, p1);
-    minus_p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
-    
+//    p_1->convert_p_to_matrix(dens, neutrino, p1);
+//    minus_p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
+  
+    matrix* p_1 = mat_p[1];
+    matrix* minus_p_1 = mat_minus_p[1];
+      
     double p4_energy;
     if(is_R1)
         p4_energy = inner_dummy_vars[outer_index]->get_value(inner_index);
     else
         p4_energy = inner_dummy_vars_2[outer_index]->get_value(inner_index);
-        
-/*    if (!is_R1 && eps_value + E2 != (E3 + p4_energy))
-        cout << "FLL, Delta E = " << eps_value + E2 - (E3 + p4_energy) << endl; */
+            
+    get_inner_matrix(dens, p4_energy, outer_index, inner_index, neutrino, mat_p[4], true, is_R1);
+    mat_minus_p[4]->identity_minus_copy(mat_p[4]);
+
+    matrix* p_4 = mat_p[4];
+    matrix* minus_p_4 = mat_minus_p[4];
     
-    get_inner_matrix(dens, p4_energy, outer_index, inner_index, neutrino, p_4, true, is_R1);
+//    matrix* minus_p_4 = new matrix(p_4);
+//    minus_p_4->convert_this_to_identity_minus_this();
     
-    matrix* minus_p_4 = new matrix(p_4);
-    minus_p_4->convert_this_to_identity_minus_this();
-    
-    double fwd = real(p_1->get_A0()) * f2 * (1-f3) * real(minus_p_4->get_A0());
+/*    double fwd = real(p_1->get_A0()) * f2 * (1-f3) * real(minus_p_4->get_A0());
     double rev = real(p_4->get_A0()) * f3 * (1-f2) * real(minus_p_1->get_A0());
     
     if (!is_R1 && abs(1-fwd/rev) > 1.e-13 && (fwd > 1.e-10 || rev > 1.e-1) && false){
@@ -1507,9 +1577,9 @@ void nu_e_collision::F_LL_F_RR(density* dens, bool is_R1, double E2, double E3, 
         for(int j = 0; j < inner_dummy_vars_2[outer_index]->get_length(); j++)
             cout << inner_dummy_vars_2[outer_index]->get_interp_index(j) << ", ";
         cout << endl;
-    }
+    }*/
     
-    matrix* F_dummy1 = new matrix();
+/*    matrix* F_dummy1 = new matrix();
     matrix* F_dummy2 = new matrix();
     matrix* F_dummy3 = new matrix();
     matrix* F_dummy4 = new matrix();
@@ -1519,43 +1589,43 @@ void nu_e_collision::F_LL_F_RR(density* dens, bool is_R1, double E2, double E3, 
     matrix* F_dummy8 = new matrix();
     matrix* F_dummy9 = new matrix();
     matrix* F_dummy10 = new matrix();
-    matrix* F_dummy11 = new matrix();
+    matrix* F_dummy11 = new matrix();*/
     
-    F_dummy1->matrix_multiply(G_L, p_4);
-    F_dummy2->matrix_multiply(G_L, minus_p_1);
-    F_dummy3->matrix_multiply(F_dummy1, F_dummy2);
-    F_dummy3->multiply_by(f3 * (1-f2));
-    F_dummy4->matrix_multiply(G_L, minus_p_4);
-    F_dummy5->matrix_multiply(G_L, p_1);
-    F_dummy6->matrix_multiply(F_dummy4, F_dummy5);
-    F_dummy6->multiply_by(f2 * (1-f3));
+    F_dummy[1]->matrix_multiply(G_L, p_4);
+    F_dummy[2]->matrix_multiply(G_L, minus_p_1);
+    F_dummy[3]->matrix_multiply(F_dummy[1], F_dummy[2]);
+    F_dummy[3]->multiply_by(f3 * (1-f2));
+    F_dummy[4]->matrix_multiply(G_L, minus_p_4);
+    F_dummy[5]->matrix_multiply(G_L, p_1);
+    F_dummy[6]->matrix_multiply(F_dummy[4], F_dummy[5]);
+    F_dummy[6]->multiply_by(f2 * (1-f3));
     if(net==true){
-        F_dummy6->multiply_by(complex<double> (-1,0));
+        F_dummy[6]->multiply_by(complex<double> (-1,0));
     }
-    F_dummy7->matrix_add(F_dummy3, F_dummy6);
+    F_dummy[7]->matrix_add(F_dummy[3], F_dummy[6]);
     
-    F_dummy8->matrix_multiply(p_4, minus_p_1);
-    F_dummy8->multiply_by(f3 * (1-f2));
-    F_dummy9->matrix_multiply(minus_p_4, p_1);
-    F_dummy9->multiply_by(f2 * (1-f3));
+    F_dummy[8]->matrix_multiply(p_4, minus_p_1);
+    F_dummy[8]->multiply_by(f3 * (1-f2));
+    F_dummy[9]->matrix_multiply(minus_p_4, p_1);
+    F_dummy[9]->multiply_by(f2 * (1-f3));
     if(net==true){
-        F_dummy9->multiply_by(complex<double> (-1,0));
+        F_dummy[9]->multiply_by(complex<double> (-1,0));
     }
-    F_dummy10->matrix_add(F_dummy8, F_dummy9);
+    F_dummy[10]->matrix_add(F_dummy[8], F_dummy[9]);
     
-    F_dummy10->multiply_by(pow(_sin_squared_theta_W_,2));
+    F_dummy[10]->multiply_by(pow(_sin_squared_theta_W_,2));
      
-    F_dummy11->matrix_add(F_dummy7, F_dummy10);
+    F_dummy[11]->matrix_add(F_dummy[7], F_dummy[10]);
      
-    complex<double> comp_F0 = F_dummy11->get_A0();
-    complex_three_vector* comp_F = F_dummy11->get_A();
+    complex<double> comp_F0 = F_dummy[11]->get_A0();
+    complex_three_vector* comp_F = F_dummy[11]->get_A();
     
     comp_F->multiply_by(2);
     
     *F0 = 2*real(comp_F0);
     F->make_real(comp_F);
         
-    delete F_dummy1;
+/*    delete F_dummy1;
     delete F_dummy2;
     delete F_dummy3;
     delete F_dummy4;
@@ -1569,7 +1639,7 @@ void nu_e_collision::F_LL_F_RR(density* dens, bool is_R1, double E2, double E3, 
     delete p_4;
     delete minus_p_4;
     delete p_1;
-    delete minus_p_1;  
+    delete minus_p_1;  */
 }
 
 void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, int outer_index, int inner_index, bool net, double* F0, three_vector* F){
@@ -1578,24 +1648,35 @@ void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, 
     double f2 = 1 / (exp(E2/T__Tcm)+1);
     double f3 = 1 / (exp(E3/T__Tcm)+1);
     
-    matrix* p_1 = new matrix();
+/*    matrix* p_1 = new matrix();
     matrix* minus_p_1 = new matrix();
     matrix* p_4 = new matrix();
     
     p_1->convert_p_to_matrix(dens, neutrino, p1);
-    minus_p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);
+    minus_p_1->convert_p_to_identity_minus_matrix(dens, neutrino, p1);*/
     
+    matrix* p_1 = mat_p[1];
+    matrix* minus_p_1 = mat_minus_p[1];
+      
+            
+
     double p4_energy;
     if(is_R1)
         p4_energy = inner_dummy_vars[outer_index]->get_value(inner_index);
     else
         p4_energy = inner_dummy_vars_2[outer_index]->get_value(inner_index);
 
-    get_inner_matrix(dens, p4_energy, outer_index, inner_index, neutrino, p_4, true, is_R1);
+    get_inner_matrix(dens, p4_energy, outer_index, inner_index, neutrino, mat_p[4], true, is_R1);
+    mat_minus_p[4]->identity_minus_copy(mat_p[4]);
+
+    matrix* p_4 = mat_p[4];
+    matrix* minus_p_4 = mat_minus_p[4];
+
+//    get_inner_matrix(dens, p4_energy, outer_index, inner_index, neutrino, p_4, true, is_R1);
     
-    matrix* minus_p_4 = new matrix(p_4);
+//    matrix* minus_p_4 = new matrix(p_4);
     
-    minus_p_4->convert_this_to_identity_minus_this();
+//    minus_p_4->convert_this_to_identity_minus_this();
     
 /*    if (!is_R1 && eps_value + E2 != (E3 + p4_energy))
         cout << "FLR, Delta E = " << eps_value + E2 - (E3 + p4_energy) << endl;*/
@@ -1622,7 +1703,7 @@ void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, 
     see Froustey C.19
     */
     
-    matrix* F_dummy1 = new matrix();
+/*    matrix* F_dummy1 = new matrix();
     matrix* F_dummy2 = new matrix();
     matrix* F_dummy3 = new matrix();
     matrix* F_dummy4 = new matrix();
@@ -1632,35 +1713,35 @@ void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, 
     matrix* F_dummy8 = new matrix();
     matrix* F_dummy9 = new matrix();
     matrix* F_dummy10 = new matrix();
-    matrix* F_dummy11 = new matrix();
+    matrix* F_dummy11 = new matrix();*/
     
-    F_dummy1->matrix_multiply(G_L, p_4);
-    F_dummy2->matrix_multiply(F_dummy1, minus_p_1);
-    F_dummy3->matrix_multiply(p_4, G_L);
-    F_dummy4->matrix_multiply(F_dummy3, minus_p_1);
+    F_dummy[1]->matrix_multiply(G_L, p_4);
+    F_dummy[2]->matrix_multiply(F_dummy[1], minus_p_1);
+    F_dummy[3]->matrix_multiply(p_4, G_L);
+    F_dummy[4]->matrix_multiply(F_dummy[3], minus_p_1);
     
-    F_dummy5->matrix_multiply(G_L, minus_p_4);
-    F_dummy6->matrix_multiply(F_dummy5, p_1);
-    F_dummy7->matrix_multiply(minus_p_4, G_L);
-    F_dummy8->matrix_multiply(F_dummy7, p_1);
+    F_dummy[5]->matrix_multiply(G_L, minus_p_4);
+    F_dummy[6]->matrix_multiply(F_dummy[5], p_1);
+    F_dummy[7]->matrix_multiply(minus_p_4, G_L);
+    F_dummy[8]->matrix_multiply(F_dummy[7], p_1);
     
-    F_dummy9->matrix_add(F_dummy2, F_dummy4);
-    F_dummy9->multiply_by(f3 * (1-f2));
-    F_dummy10->matrix_add(F_dummy6, F_dummy8);
-    F_dummy10->multiply_by(f2 * (1-f3));
+    F_dummy[9]->matrix_add(F_dummy[2], F_dummy[4]);
+    F_dummy[9]->multiply_by(f3 * (1-f2));
+    F_dummy[10]->matrix_add(F_dummy[6], F_dummy[8]);
+    F_dummy[10]->multiply_by(f2 * (1-f3));
 
 //    cout << p_4->get_A0() << ", " << F_dummy9->get_A0() << ", " << F_dummy10->get_A0() << ", " << F_dummy9->get_A0() - F_dummy10->get_A0() << endl;
 
      
     if(net==true){
-        F_dummy10->multiply_by(complex<double> (-1,0));
+        F_dummy[10]->multiply_by(complex<double> (-1,0));
     }
-    F_dummy11->matrix_add(F_dummy9, F_dummy10);
+    F_dummy[11]->matrix_add(F_dummy[9], F_dummy[10]);
     
-    F_dummy11->multiply_by(_sin_squared_theta_W_);
+    F_dummy[11]->multiply_by(_sin_squared_theta_W_);
     
-    complex<double> comp_F0 = F_dummy11->get_A0();
-    complex_three_vector* comp_F = F_dummy11->get_A();
+    complex<double> comp_F0 = F_dummy[11]->get_A0();
+    complex_three_vector* comp_F = F_dummy[11]->get_A();
     
     comp_F->multiply_by(2);
     
@@ -1668,7 +1749,7 @@ void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, 
     F->make_real(comp_F);
     
     
-    delete F_dummy1;
+/*    delete F_dummy1;
     delete F_dummy2;
     delete F_dummy3;
     delete F_dummy4;
@@ -1682,7 +1763,7 @@ void nu_e_collision::F_LR_F_RL(density* dens, bool is_R1, double E2, double E3, 
     delete p_4;
     delete minus_p_4;
     delete p_1;
-    delete minus_p_1;  
+    delete minus_p_1;  */
 }
 
 double nu_e_collision::M_11(int which, double* kinematic){
