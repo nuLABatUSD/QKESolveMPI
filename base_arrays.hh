@@ -36,6 +36,7 @@ class array{
         array(int);
     
         double get_value(int);
+        double get_value_from_end(int);
         int get_length();
         int get_len();
         int length();
@@ -62,7 +63,9 @@ class dummy_vars : public array{
         ~dummy_vars();
         
         double get_weight(int);
+        double get_weight_from_end(int);
         double get_max_linspace();
+        double get_max_value();
         
         void set_weight(int, double);
         
@@ -76,8 +79,7 @@ class dummy_vars : public array{
         double integrate_pow(dep_vars*, double);
         double partial_integrate_pow_end(int, dep_vars*, double);
         
-        void print_csv(ostream&);
-        
+        void print_csv(ostream&);        
 };
 
 class dep_vars : public array{

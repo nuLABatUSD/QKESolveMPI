@@ -28,6 +28,8 @@ void three_vector_for_QKE::v_vacuum(double delta_m_squared, double cos_2theta, d
 
 void three_vector_for_QKE::v_thermal(dummy_vars* q, density* d){
 
+    cout << "V_T" << endl;
+
     dep_vars* d0 = new dep_vars(q->get_len()); 
     dep_vars* d1 = new dep_vars(q->get_len()); 
     dep_vars* d2 = new dep_vars(q->get_len());
@@ -264,7 +266,7 @@ void density::set_T_Tcm(double T, double Tcm){
 
 void density::set_value(int b, bool nu, int comp, double val){
     int index = b;
-    if (nu)
+    if (!nu)
         index += N_bins;
     set_value(4 * index + comp, val);
 }
