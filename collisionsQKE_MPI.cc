@@ -250,3 +250,10 @@ void collisions::C(density* dens, density* output, bool net){
        delete[] dummy_int;
  
 }
+
+void collisions::set_min_rate(density* ic){
+    if (myid != 0){
+        for(int j = 0; j < num_integrators; j++)
+            integrators[j]->set_min_rate(ic);
+    }
+}

@@ -1,4 +1,5 @@
 #!/usr/bin/bash
+set -x
 
 output_base=$1
 
@@ -35,7 +36,12 @@ if [ -f $program_name ]; then
     echo "module load modtree/cpu" >> $execute_file
     echo "mpiexec -n $numprocs $program_name results/${output_file}" >> $execute_file
 
-    cp run_params.hh "results/${output_file}_params.hh"
-    
+    param_file="results/${output_file}_params.hh"    
+    echo $param_file
+    git_version=$(git rev-parse --short HEAD )
+    cp run_params.hh $param_file
+    echo "" >> $param_file
+    echo "// Git version ${git_version}" >> $param_file
+
     echo "Ready to run: sbatch ${execute_file}"
 fi
