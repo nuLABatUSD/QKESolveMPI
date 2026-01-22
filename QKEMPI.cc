@@ -54,6 +54,7 @@ QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, 
     nu_e_ann = false;
     
     coll_integrator = new collisions(myid, numprocs, epsilon, NU_NU_COLLISIONS, NU_E_COLLISIONS, NU_E_ANNIHILATION);
+    coll_integrator->set_min_rate(ic);
     
     tol = ODE_SOLVER_TOLERANCE;
     TINY = ODE_SOLVER_TINY;

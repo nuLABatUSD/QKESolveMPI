@@ -27,6 +27,8 @@ class collisions{
         void compute_R(double, double, double*);
         void C(density*, density*, bool=true);
         
+        void set_min_rate(density*);
+        
         void print_coll();
 };
 
