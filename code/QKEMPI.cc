@@ -1,25 +1,7 @@
-#include "QKESolve.hh"
-#include "arrays.hh"
-#include "density.hh"
-#include "collisionsQKE_MPI.hh"
-#include "collisionsQKE.hh"
-#include "CashKarp_vals.hh"
-#include "QKEMPI.hh"
-#include "run_params.hh"
+#include "include.hh"
+
 #include "mpi.h"
 
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <chrono>
-#include <string>
-
-using std::cout;
-using std::endl;
-using std::ofstream;
-using std::abs;
-
-using namespace std::chrono;
 
 #ifndef ODE_SOLVER_TOLERANCE
 #define ODE_SOLVER_TOLERANCE 1.e-8

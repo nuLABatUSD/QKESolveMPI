@@ -1,11 +1,7 @@
 #ifndef _MATRICES_HH_
 #define _MATRICES_HH_
 
-#include <complex>
-#include "arrays.hh"
-#include "density.hh"
-
-using std::complex;
+#include "include.hh"
 
 class matrix
 {

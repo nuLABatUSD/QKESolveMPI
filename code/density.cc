@@ -1,15 +1,4 @@
-#include "density.hh"
-#include "arrays.hh"
-#include "base_arrays.hh"
-#include "thermodynamics.hh"
-#include "constants.hh"
-
-#include <iostream>
-#include <cmath>
-
-using std::cout;
-using std::endl;
-using std::max;
+#include "include.hh"
 
 double interpolate_log_fifth(double, double*, double*);
 double fifth_order_fit(double, double*, double*);

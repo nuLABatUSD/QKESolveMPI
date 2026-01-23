@@ -1,13 +1,6 @@
-#include "collisionsQKE_MPI.hh"
-#include "collisionsQKE.hh"
-#include "arrays.hh"
-#include "density.hh"
+#include "include.hh"
+
 #include "mpi.h"
-
-#include <iostream>
-
-using std::cout;
-using std::endl;
 
 collisions::collisions(int rank, int num_ranks, linspace_and_gl* e, bool nu_nu, bool nu_e, bool nu_e_ann){
     myid = rank;
