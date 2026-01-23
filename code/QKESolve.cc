@@ -1,18 +1,8 @@
-#include <iostream>
-#include <cmath>
-
-#include "constants.hh"
-#include "QKESolve.hh"
-#include "density.hh"
-#include "arrays.hh"
+#include "include.hh"
 
 #ifndef USE_V_THERMAL
 #define USE_V_THERMAL 0
 #endif
-
-
-using std::cout;
-using std::endl;
 
 QKE::QKE(linspace_and_gl* e, double sin_2theta, double delta_m_squared, density* dens) : ODESolve()
 {

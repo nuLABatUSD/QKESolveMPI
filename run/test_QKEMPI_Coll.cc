@@ -1,20 +1,6 @@
-#include "collisionsQKE.hh"
-#include "arrays.hh"
-#include "density.hh"
-#include "collisionsQKE_MPI.hh"
-
+#include "../code/include.hh"
 #include "mpi.h"
 
-
-#include <iostream>
-#include <chrono>
-
-using std::cout;
-using std::endl;
-
-using namespace std;
-
-using namespace std::chrono;
 
 int main(int argc, char* argv[])
 {
@@ -27,14 +13,14 @@ int main(int argc, char* argv[])
     linspace_and_gl* eps = new linspace_and_gl(0., 20., 201, 5);
     int N_bins = eps->get_length();
     
+    density* ics = new density(eps, IC_TCM, IC_NU_E, IC_NU_MU, IC_NUBAR_E, IC_NUBAR_MU, IC_MAX_DISTFUN);
+    density* der = new density(ics);
 
     collisions* C_MPI = new collisions(myid, numprocs, eps, true, true, false);
         
-    double* R_values = new double[N_bins * 4];
-
     auto start = high_resolution_clock::now();
-    
-    C_MPI->compute_R(32., 32., R_values); 
+
+    C_MPI->C(ics, der);
         
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
@@ -42,14 +28,22 @@ int main(int argc, char* argv[])
     cout << myid << ", " << C_MPI->get_load_value() << endl;
     
     if(myid == 0){
-        for(int i = 0; i < eps->get_length(); i++)
-            cout << eps->get_value(i) << ", " << R_values[i] << ", " << R_values[2*206+i] << endl;
         cout << "Time elapsed: " << duration.count() / 1000. << " seconds" << endl;
-    }
 
-    delete[] R_values;
+/*    ofstream file;
+    file.open("der_nue_test.csv");
+
+    der->print_csv(file);
+    file << endl;
+    
+    file.close();*/
+    }
+    
     delete C_MPI;
         
+    delete ics;
+    delete der;
+
     delete eps;
     
     MPI_Finalize();

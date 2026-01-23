@@ -3,17 +3,15 @@
 #ifndef _COLLISIONS_QKE_HH_
 #define _COLLISIONS_QKE_HH_
 
-#include "arrays.hh"
-#include "density.hh"
-#include "matrices.hh"
+#include "include.hh"
 
-#include <iostream>
+#ifndef _COMPUTE_R_ERROR_
+#define _COMPUTE_R_ERROR_ -999.
+#endif
 
-using std::cout;
-using std::endl;
-
-const double _COMPUTE_R_ERROR_ = -999.;
-const double tolerance_min_rate = 100.;
+#ifndef TOLERANCE_MIN_RATE
+#define TOLERANCE_MIN_RATE 100.
+#endif
 
 #define EPS_CUT_1 0
 #define EPS_CUT_2 5

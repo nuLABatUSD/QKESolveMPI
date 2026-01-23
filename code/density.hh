@@ -1,11 +1,7 @@
 #ifndef _DENSITY_HH_
 #define _DENSITY_HH_
 
-#include "arrays.hh"
-#include "constants.hh"
-
-#include <iostream>
-#include <cmath>
+#include "include.hh"
 
 using std::ostream;
 

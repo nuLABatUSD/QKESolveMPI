@@ -1,15 +1,6 @@
-#include "QKEMPI.hh"
-#include "arrays.hh"
-#include "density.hh"
-#include "run_params.hh"
+#include "../code/include.hh"
 #include "mpi.h"
 
-#include "run_params.hh"
-
-#include <iostream>
-
-using std::cout;
-using std::endl;
 
 int main(int argc, char* argv[]){
     int myid, numprocs;

@@ -1,19 +1,5 @@
-#include "arrays.hh"
-#include "base_arrays.hh"
-#include "density.hh"
-#include "collisionsQKE.hh"
-#include "constants.hh"
-#include "matrices.hh"
-#include "run_params.hh"
+#include "include.hh"
 
-#include <iostream>
-#include <cmath>
-
-using std::cout;
-using std::endl;
-
-using std::abs;
-using std::max;
 
 collision_integral::collision_integral(int b, linspace_and_gl* e, bool nu){
     bin = b;

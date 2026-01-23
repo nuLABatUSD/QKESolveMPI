@@ -1,14 +1,5 @@
-#include "matrices.hh"
-#include "arrays.hh"
-#include "density.hh"
-#include <complex>
-#include <iostream>
+#include "include.hh"
 
-
-using std::cout;
-using std::endl;
-using std::complex;
-using std::abs;
 
 double interpolate(double, double, double, double, double);
 double extrapolate_exponential(double, double, double, double, double);

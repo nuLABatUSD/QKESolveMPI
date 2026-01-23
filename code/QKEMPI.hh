@@ -1,14 +1,7 @@
 #ifndef _QKEMPI_HH_
 #define _QKEMPI_HH_
 
-#include "QKESolve.hh"
-#include "collisionsQKE_MPI.hh"
-#include "arrays.hh"
-#include "density.hh"
-
-#include <string>
-
-using std::string;
+#include "include.hh"
 
 class QKEMPI{
     protected:

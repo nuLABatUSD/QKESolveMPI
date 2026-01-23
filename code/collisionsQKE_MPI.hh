@@ -1,9 +1,7 @@
 #ifndef _COLLISIONS_MPI_HH_
 #define _COLLISIONS_MPI_HH_
 
-#include "collisionsQKE.hh"
-#include "arrays.hh"
-#include "density.hh"
+#include "include.hh"
 
 class collisions{
     protected:
