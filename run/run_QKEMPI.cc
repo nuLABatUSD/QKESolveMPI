@@ -1,4 +1,4 @@
-#include "code/include.hh"
+#include "../code/include.hh"
 #include "mpi.h"
 
 

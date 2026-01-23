@@ -1,9 +1,14 @@
 #!/usr/bin/bash
-set -x
+if [ $# -ne 1 ]; then
+    echo "usage: bash compile_QKEMPI.sh output_filename"
+    exit 1
+fi
 
 output_base=$1
 
-output_file=$(python compile_QKEMPI.py $output_base )
+. ./script/script_vars.sh 
+
+output_file=$(python ${script_folder}/QKEMPI_compile.py $output_base )
 
 numprocs="128"
 execute_file="execute_${output_file}.sh"
@@ -18,7 +23,7 @@ if [ -f $execute_file ]; then
     rm $execute_file
 fi
 
-mpic++ run_QKEMPI.cc QKEMPI.cc collisionsQKE_MPI.cc collisionsQKE.cc QKESolve.cc thermodynamics.cc arrays.cc base_arrays.cc density.cc matrices.cc -std=c++11 -o $program_name
+mpic++ ${run_code_folder}/run_QKEMPI.cc ${MPI_code} ${QKE_code} -std=c++11 -o $program_name
 
 if [ -f $program_name ]; then
     echo "#!/bin/bash" > $execute_file

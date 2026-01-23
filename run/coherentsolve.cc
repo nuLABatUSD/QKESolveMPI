@@ -1,21 +1,6 @@
 #define USE_V_THERMAL 0
 
-#include "QKESolve.hh"
-#include "density.hh"
-#include "arrays.hh"
-#include "constants.hh"
-
-#include <iostream>
-#include <cmath>
-#include <fstream>
-#include <string>
-
-using std::max;
-using std::ofstream;
-using std::cout;
-using std::endl;
-using std::atof;
-using std::string;
+#include "../code/include.hh"
 
 
 int main(int argc, char* argv[]){
