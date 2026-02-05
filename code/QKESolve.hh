@@ -1,9 +1,7 @@
 #ifndef __QKESOLVE_HH__
 #define __QKESOLVE_HH__
 
-#include "ODESolve.hh"
-#include "arrays.hh"
-#include "density.hh"
+#include "include.hh"
 
 class QKE : public ODESolve<density>
 {

@@ -9,4 +9,5 @@ __pycache__
 Untitled*
 *.exe
 untitled*
-./results
+run_params.hh
+results

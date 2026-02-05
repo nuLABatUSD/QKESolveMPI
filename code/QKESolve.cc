@@ -1,14 +1,8 @@
-#include <iostream>
-#include <cmath>
+#include "include.hh"
 
-#include "constants.hh"
-#include "QKESolve.hh"
-#include "density.hh"
-#include "arrays.hh"
-
-
-using std::cout;
-using std::endl;
+#ifndef USE_V_THERMAL
+#define USE_V_THERMAL 0
+#endif
 
 QKE::QKE(linspace_and_gl* e, double sin_2theta, double delta_m_squared, density* dens) : ODESolve()
 {
@@ -48,7 +42,9 @@ void QKE::f(double t, density* d1, density* d2)
     three_vector* vcrossp = new three_vector;
     
     dummy_v_dens->v_density(epsilon, d1);
-    dummy_v_therm->v_thermal(epsilon, d1);
+    if(USE_V_THERMAL == 1)
+        dummy_v_therm->v_thermal(epsilon, d1);
+
     double Tcm = d1->get_Tcm();
     
     double en = 0.;

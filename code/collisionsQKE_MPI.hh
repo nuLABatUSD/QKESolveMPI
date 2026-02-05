@@ -1,13 +1,11 @@
 #ifndef _COLLISIONS_MPI_HH_
 #define _COLLISIONS_MPI_HH_
 
-#include "collisionsQKE.hh"
-#include "arrays.hh"
-#include "density.hh"
+#include "include.hh"
 
 class collisions{
     protected:
-        int myid, numprocs, num_integrators, N_bins;
+        int myid, numprocs, num_integrators, N_bins, total_integrators;
         
         linspace_and_gl* eps;
         collision_integral** integrators;
@@ -19,7 +17,7 @@ class collisions{
         int** worker_result_indexes;
         
     public:
-        collisions(int, int, linspace_and_gl*);
+        collisions(int, int, linspace_and_gl*, bool, bool, bool);
         ~collisions();
         
         int get_load_value();
@@ -28,6 +26,10 @@ class collisions{
         void C(density*, density*, bool=true);
         double number_dens_sum_rule(density*);
         double energy_dens_sum_rule(density*);
+        
+        void set_min_rate(density*);
+        
+        void print_coll();
 };
 
 

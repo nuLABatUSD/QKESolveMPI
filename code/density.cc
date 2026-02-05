@@ -1,15 +1,4 @@
-#include "density.hh"
-#include "arrays.hh"
-#include "base_arrays.hh"
-#include "thermodynamics.hh"
-#include "constants.hh"
-
-#include <iostream>
-#include <cmath>
-
-using std::cout;
-using std::endl;
-using std::max;
+#include "include.hh"
 
 double interpolate_log_fifth(double, double*, double*);
 double fifth_order_fit(double, double*, double*);
@@ -27,6 +16,8 @@ void three_vector_for_QKE::v_vacuum(double delta_m_squared, double cos_2theta, d
 
 
 void three_vector_for_QKE::v_thermal(dummy_vars* q, density* d){
+
+    cout << "V_T" << endl;
 
     dep_vars* d0 = new dep_vars(q->get_len()); 
     dep_vars* d1 = new dep_vars(q->get_len()); 
@@ -264,7 +255,7 @@ void density::set_T_Tcm(double T, double Tcm){
 
 void density::set_value(int b, bool nu, int comp, double val){
     int index = b;
-    if (nu)
+    if (!nu)
         index += N_bins;
     set_value(4 * index + comp, val);
 }

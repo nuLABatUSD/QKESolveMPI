@@ -1,9 +1,10 @@
 #ifndef _ARRAYS_HH_
 #define _ARRAYS_HH_
-#include <complex>
-#include <iostream>
 
-#include "base_arrays.hh"
+#include "include.hh"
+
+#define INNER_INTEGRAL_INFINITY -999.
+#define SUBDV_INTERP_SMALL 1.e-12
 
 class dummy_vars;
 class dep_vars;
@@ -12,20 +13,6 @@ class complex_three_vector;
 using std::complex;
 using std::ostream;
 
-
-class gl_dummy_vars : public dummy_vars
-{
-    public:
-    gl_dummy_vars(int, double=0);
-    gl_dummy_vars(gl_dummy_vars*);
-};
-
-class gel_dummy_vars : public dummy_vars
-{
-    public:
-    gel_dummy_vars(int, double, double);
-    gel_dummy_vars(gel_dummy_vars*);
-};
 
 class linspace_and_gl : public dummy_vars
 {
@@ -47,6 +34,24 @@ class linspace_for_trap : public linspace_and_gl
         linspace_for_trap(linspace_for_trap*);
 };
 
+class sub_dummy_vars : public dummy_vars{
+    protected:
+        dummy_vars* orig_bins;
+    
+        bool* need_interpolation;
+        int* interpolation_indices;
+        
+    public:
+        sub_dummy_vars(dummy_vars*, double, double, int=0);
+        sub_dummy_vars(dummy_vars*);
+        sub_dummy_vars(dummy_vars*, int);
+        ~sub_dummy_vars();
+        
+        bool get_need_interp(int);
+        int get_interp_index(int);
+        
+        void set_interp();
+};
 
 class three_vector : public dep_vars
 {

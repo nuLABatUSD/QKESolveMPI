@@ -1,25 +1,7 @@
-#include "QKESolve.hh"
-#include "arrays.hh"
-#include "density.hh"
-#include "collisionsQKE_MPI.hh"
-#include "collisionsQKE.hh"
-#include "CashKarp_vals.hh"
-#include "QKEMPI.hh"
-#include "run_params.hh"
+#include "include.hh"
+
 #include "mpi.h"
 
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <chrono>
-#include <string>
-
-using std::cout;
-using std::endl;
-using std::ofstream;
-using std::abs;
-
-using namespace std::chrono;
 
 #ifndef ODE_SOLVER_TOLERANCE
 #define ODE_SOLVER_TOLERANCE 1.e-8
@@ -53,7 +35,8 @@ QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, 
     nu_e_coll = false;
     nu_e_ann = false;
     
-    coll_integrator = new collisions(myid, numprocs, epsilon);
+    coll_integrator = new collisions(myid, numprocs, epsilon, NU_NU_COLLISIONS, NU_E_COLLISIONS, NU_E_ANNIHILATION);
+    coll_integrator->set_min_rate(ic);
     
     tol = ODE_SOLVER_TOLERANCE;
     TINY = ODE_SOLVER_TINY;

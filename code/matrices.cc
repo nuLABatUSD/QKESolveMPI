@@ -1,14 +1,5 @@
-#include "matrices.hh"
-#include "arrays.hh"
-#include "density.hh"
-#include <complex>
-#include <iostream>
+#include "include.hh"
 
-
-using std::cout;
-using std::endl;
-using std::complex;
-using std::abs;
 
 double interpolate(double, double, double, double, double);
 double extrapolate_exponential(double, double, double, double, double);
@@ -38,6 +29,11 @@ matrix::matrix(bool id){
         A = new complex_three_vector();
     }
     
+}
+
+matrix::matrix(matrix* c){
+    A0 = c->get_A0();
+    A = new complex_three_vector(c->get_A());
 }
 
 complex<double> matrix::get_A0(){
@@ -127,6 +123,22 @@ void matrix::matrix_multiply(matrix* C1, matrix* C2){
     delete C1_A;
     delete C2_A;
     
+}
+
+void matrix::set_identity(complex <double> c){
+    A0 = c;
+    A->multiply_by(complex<double>(0.));
+}
+
+void matrix::copy(matrix* m){
+    A0 = m->get_A0();
+    for(int i = 0; i < 3; i++)
+        A->set_value(i, m->get_A()->get_value(i));
+}
+
+void matrix::identity_minus_copy(matrix* m){
+    copy(m);
+    convert_this_to_identity_minus_this();
 }
 
 matrix::~matrix(){
