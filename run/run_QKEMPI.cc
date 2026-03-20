@@ -11,6 +11,7 @@ int main(int argc, char* argv[]){
     
     linspace_and_gl* eps = new linspace_and_gl(0., EPS_MAX_LINSPACE, EPS_LINSPACE_POINTS, 5);
     density* ics = new density(eps, IC_TCM, IC_NU_E, IC_NU_MU, IC_NUBAR_E, IC_NUBAR_MU, IC_MAX_DISTFUN);
+    ics->set_T_Tcm(IC_TEMP, IC_TCM);
         
     QKEMPI* sim = new QKEMPI(myid, numprocs, PARAM_SIN_2THETA, PARAM_DELTA_M_SQUARED, 0., PARAM_DT_INIT, eps, ics);
     

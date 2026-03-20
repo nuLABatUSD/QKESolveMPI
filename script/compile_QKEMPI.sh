@@ -8,7 +8,7 @@ output_base=$1
 
 . ./script/script_vars.sh 
 
-output_file=$(python ${script_folder}/QKEMPI_compile.py $output_base )
+output_file=$(python3 ${script_folder}/QKEMPI_compile.py $output_base )
 
 numprocs="128"
 execute_file="execute_${output_file}.sh"

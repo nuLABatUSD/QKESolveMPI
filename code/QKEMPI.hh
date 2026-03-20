@@ -3,6 +3,10 @@
 
 #include "include.hh"
 
+#ifndef _PRINT_STEP_REJECT_
+#define _PRINT_STEP_REJECT_ false
+#endif
+
 class QKEMPI{
     protected:
         double x_value;
@@ -29,7 +33,7 @@ class QKEMPI{
         density* k5;
         density* k6;
 
-        density* z2; 
+        density* z2;
         density* z3;
         density* z4;
         density* z5;
@@ -43,6 +47,9 @@ class QKEMPI{
         double Safety;
         int total_ODE_steps;
         int total_ODE_rejected_steps;
+
+	int problem_y[10];
+	double dx_attempts[10];
     
     public:
         // (int rank, int numranks, double sin2theta, double dm2, double x0, double dx0, linspace_and_gl* e, density* ic)
@@ -57,7 +64,7 @@ class QKEMPI{
         double first_derivative(double, density*, density*, double, double*);
 
         void RKCash_Karp(double, density*, double, double*, density*, density*);
-        bool step_accept(density*, density*, density*, double, double*, bool=false, bool=false);
+        bool step_accept(density*, density*, density*, double, double*, bool=_PRINT_STEP_REJECT_, bool=false);
         
         bool RKCK_step(double, density*, double, double*, density*, double*);
         bool RKCK_step_advance();
