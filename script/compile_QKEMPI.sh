@@ -31,7 +31,7 @@ if [ -f $program_name ]; then
     echo "#SBATCH -A phy240216" >> $execute_file
     echo "#SBATCH --nodes=1" >> $execute_file
     echo "#SBATCH --ntasks=128" >> $execute_file
-    echo "#SBATCH -J qkesolvef" >> $execute_file
+    echo "#SBATCH -J ${output_base}" >> $execute_file
     echo "#SBATCH -p wholenode" >> $execute_file
     echo "#SBATCH --time=12:00:00" >> $execute_file
     echo "#SBATCH --mail-user=ckishimoto@sandiego.edu" >> $execute_file

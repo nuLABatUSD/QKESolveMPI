@@ -229,8 +229,13 @@ bool QKEMPI::step_accept(density* y, density* y5, density* y4, double dx, double
         double delta1 = 0;
         double delta0 = 0;
 
+	if(y5->isnan() || y4->isnan()){
+	    dsm = 1.e4;
+	    problem = -1;
+	}
+	else{
         for (int i = 0; i<N; i++)
-        { 
+         { 
             delta1 = abs(y5 -> get_value(i) - y4 -> get_value(i));
             delta0 = eps*(abs(y -> get_value(i)) + abs(y5 -> get_value(i) - y -> get_value(i))) + TINY;
 
@@ -241,7 +246,7 @@ bool QKEMPI::step_accept(density* y, density* y5, density* y4, double dx, double
 
              }
          }
-
+	}
         if (dsm == 0)
         {
             *dx_new = 5 * dx;
