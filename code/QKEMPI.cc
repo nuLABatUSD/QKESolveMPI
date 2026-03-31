@@ -231,7 +231,27 @@ bool QKEMPI::step_accept(density* y, density* y5, density* y4, double dx, double
 
 	if(y5->isnan() || y4->isnan()){
 	    dsm = 1.e4;
-	    problem = -1;
+	    problem = 0;
+
+        if(k1->isnan()){
+            cout << "k1 is nan" << endl;
+        }
+        else if(k2->isnan()){
+            cout << "k2 is nan" << endl;
+        }
+        else if(k3->isnan()){
+            cout << "k3 is nan" << endl;
+        }
+        else if(k4->isnan()){
+            cout << "k4 is nan" << endl;
+        }
+        else if(k5->isnan()){
+            cout << "k5 is nan" << endl;
+        }
+        else{
+            cout << "k6 is nan" << endl;
+        }
+        
 	}
 	else{
         for (int i = 0; i<N; i++)

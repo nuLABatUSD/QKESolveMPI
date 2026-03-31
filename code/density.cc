@@ -496,6 +496,11 @@ double density::interpolated_matrix(bool neutrino, int index, double p4_energy, 
         delete secondp0p;
     }
 
+    for(int i = 0; i < 4; i++){
+        if (std::isnan(results[i]))
+            cout << i << " is nan in interpolation; p4_energy = " << p4_energy << endl;
+    }
+
 
     p0p->set_value(0, 2*results[1]);
     p0p->set_value(1, 2*results[2]);
