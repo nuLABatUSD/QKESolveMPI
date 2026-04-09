@@ -88,7 +88,7 @@ bool collision_integral::is_neutrino()
 
 void collision_integral::set_min_rate(density* dens){
     double R_vals[2];
-    compute_R(dens->get_Tcm(), dens->get_T(), R_vals);
+    compute_R(dens->get_Tcm(), dens->get_Tcm(), R_vals);
     
     double C_vals[4];
     whole_integral(dens, C_vals, false);

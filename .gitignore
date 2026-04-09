@@ -11,3 +11,6 @@ Untitled*
 untitled*
 run_params.hh
 results
+*.out
+slurm*
+execute*

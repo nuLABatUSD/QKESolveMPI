@@ -229,8 +229,13 @@ bool QKEMPI::step_accept(density* y, density* y5, density* y4, double dx, double
         double delta1 = 0;
         double delta0 = 0;
 
+	if(y5->isnan() || y4->isnan()){
+	    dsm = 1.e4;
+	    problem = -1;
+	}
+	else{
         for (int i = 0; i<N; i++)
-        { 
+         { 
             delta1 = abs(y5 -> get_value(i) - y4 -> get_value(i));
             delta0 = eps*(abs(y -> get_value(i)) + abs(y5 -> get_value(i) - y -> get_value(i))) + TINY;
 
@@ -241,7 +246,7 @@ bool QKEMPI::step_accept(density* y, density* y5, density* y4, double dx, double
 
              }
          }
-
+	}
         if (dsm == 0)
         {
             *dx_new = 5 * dx;
@@ -255,7 +260,7 @@ bool QKEMPI::step_accept(density* y, density* y5, density* y4, double dx, double
         else{
             *dx_new = Safety * dx * pow(dsm, -0.25);
             if (error_verbose)
-                cout << "dsm = " << dsm << ", dx = " << dx << endl << "problem index = " << problem << "; y5 = " << y5->get_value(problem) << "; y4 = " << y4->get_value(problem) << endl;
+                cout << "dsm = " << dsm << ", x = " << x_value-dx << ", dx = " << dx << endl << "problem index = " << problem << "; y5 = " << y5->get_value(problem) << "; y4 = " << y4->get_value(problem) << endl;
             
             if (print_error_file)
             {
@@ -313,6 +318,8 @@ bool QKEMPI::RKCK_step(double x, density* y, double dx, double* x_next, density*
     
     bool accept = false;
     for (int i = 0; i<10; i++){
+	if(i > 0 && myid == 0)
+	    cout << i << endl;
         RKCash_Karp(x, y, dx_try, x_next, y5, y4);
         
         if (step_accept(y, y5, y4, (*x_next-x), dx_next)){
@@ -322,6 +329,8 @@ bool QKEMPI::RKCK_step(double x, density* y, double dx, double* x_next, density*
         } 
         else{
            dx_try = *dx_next; 
+	   if(i >= 5)
+		dx_try *= 0.5;
         }
 
     }
