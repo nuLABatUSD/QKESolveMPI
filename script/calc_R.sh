@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
-if [ $# -ne 4 ]; then
-    echo "usage: bash calc_R.sh (0 for nu/nu | 1 for nu_e) N_LS_bins eps_max filename"
+if [ $# -ne 5 ]; then
+    echo "usage: bash calc_R.sh (0 for nu/nu | 1 for nu_e) N_LS_bins eps_max N_GL filename"
     exit 1
 fi
 

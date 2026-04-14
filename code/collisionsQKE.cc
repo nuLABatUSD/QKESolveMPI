@@ -1,5 +1,8 @@
 #include "include.hh"
 
+#ifndef OUTER_EL_GL_POINTS
+#define OUTER_EL_GL_POINTS 50
+#endif
 
 collision_integral::collision_integral(int b, linspace_and_gl* e, bool nu){
     bin = b;
@@ -892,7 +895,8 @@ nu_e_collision::nu_e_collision(int b, linspace_and_gl* e, bool nu, double T_cm) 
     num_F = 4;
     F_values = new double**[4*num_F];
 
-    int N_outer = 50;
+    int N_outer = OUTER_EL_GL_POINTS;
+
     outer_dummy_vars = new gl_dummy_vars(N_outer, 0.);
     outer_vals = new dep_vars(N_outer);
     
