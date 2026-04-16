@@ -237,7 +237,7 @@ bool QKEMPI::step_accept(density* y, density* y5, density* y4, double dx, double
         for (int i = 0; i<N; i++)
          { 
             delta1 = abs(y5 -> get_value(i) - y4 -> get_value(i));
-            delta0 = eps*(abs(y -> get_value(i)) + abs(y5 -> get_value(i) - y -> get_value(i))) + TINY;
+            delta0 = tol*(abs(y -> get_value(i)) + abs(y5 -> get_value(i) - y -> get_value(i))) + TINY;
 
             if (delta1/delta0 > dsm)
             { 

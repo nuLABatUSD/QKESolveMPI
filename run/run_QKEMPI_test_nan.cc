@@ -1,4 +1,4 @@
-#include "density_test.hh"
+#include "../density_test.hh"
 
 #include "../code/include.hh"
 #include "mpi.h"
