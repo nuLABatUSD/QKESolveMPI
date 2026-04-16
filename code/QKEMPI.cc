@@ -31,9 +31,9 @@ QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, 
     
     just_h = new QKE(e, sin_2theta, delta_m_squared, y_values);
     
-    nu_nu_coll = true;
-    nu_e_coll = false;
-    nu_e_ann = false;
+    nu_nu_coll = NU_NU_COLLISIONS;
+    nu_e_coll = NU_E_COLLISIONS;
+    nu_e_ann = NU_E_ANNIHILATION;
     
     coll_integrator = new collisions(myid, numprocs, epsilon, NU_NU_COLLISIONS, NU_E_COLLISIONS, NU_E_ANNIHILATION);
     coll_integrator->set_min_rate(ic);
@@ -462,4 +462,42 @@ bool QKEMPI::run(int N_step, int dN, double x_final, const std::string& file_nam
     return ODEOneRun(N_step, dN, x_final, file_name, verbose, true);
 }
 
+void QKEMPI::print_test_steps(ostream& os, int max_steps){
+    double dx_try = dx_value;
+    double x = x_value;
+    double x_next, dx_next;
 
+    density* y = new density(y_values);
+
+    density* y5 = new density(y);
+    density* y4 = new density(y);
+
+    for(int i = 0; i < max_steps; i++){
+        for(int j = 0; j < 10; j++){
+            RKCash_Karp(x, y, dx_try, &x_next, y5, y4);
+            if(myid == 0){
+                k1->print_csv(os);
+                os << endl;
+                k2->print_csv(os);
+                os << endl;
+                k3->print_csv(os);
+                os << endl;
+                k4->print_csv(os);
+                os << endl;
+                k5->print_csv(os);
+                os << endl;
+                k6->print_csv(os);
+                os << endl;
+            }
+            if (step_accept(y, y5, y4, (x_next-x), &dx_next)){
+                y->copy(y5);
+                break;
+            } 
+            else{
+               dx_try = dx_next; 
+    	   if(i >= 5)
+    		dx_try *= 0.5;
+            }
+        }        
+    }
+}

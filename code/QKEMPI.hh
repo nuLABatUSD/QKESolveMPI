@@ -71,6 +71,9 @@ class QKEMPI{
         bool ODEOneRun(int, int, double, const string&, bool=false, bool=true);
         
         bool run(int, int, double, const string&, bool=true);
+
+        void set_density_object_for_test();
+        void print_test_steps(ostream&, int=1);
 };
 
 
