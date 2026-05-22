@@ -377,6 +377,11 @@ bool QKEMPI::ODEOneRun(int N_step, int dN, double x_final, const std::string& fi
 
     if(myid == 0){    
         if (print_csv_file){
+            std::string eps_filename = file_name + "-eps.csv";
+            file.open(eps_filename);
+            epsilon->print_csv(file);
+            file.close();
+            
             std::string data_filename = file_name + ".csv";
             file.open(data_filename);
         }
@@ -448,9 +453,6 @@ bool QKEMPI::ODEOneRun(int N_step, int dN, double x_final, const std::string& fi
         if(print_csv_file){
             file.close();
             
-            std::string eps_filename = file_name + "-eps.csv";
-            file.open(eps_filename);
-            epsilon->print_csv(file);            
         }
     }
     return done;
