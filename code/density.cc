@@ -8,6 +8,9 @@ double linear(double, double, double, double, double);
 double extrapolate_exponential(double, double, double, double, double);
 double extrapolate_linear(double, double, double, double, double);
 
+double interp_extrap_P0Pxy(double, double, double, double, double, double, double, double);
+
+
 void three_vector_for_QKE::v_vacuum(double delta_m_squared, double cos_2theta, double sin_2theta ){
     values[0] = delta_m_squared / 2. * sin_2theta;
     values[1] = 0.;
@@ -482,14 +485,20 @@ double density::interpolated_matrix(bool neutrino, int index, double p4_energy, 
         //1/2(p0+p0pz)
         results[0] = interpolate_log_linear(p4_energy, energy_one, energy_two, 0.5*(this->p0(index, neutrino) + p0p->get_value(2)), 0.5*(this->p0(index+1, neutrino) + secondp0p->get_value(2)));
 
-        //1/2(p0px)
-        results[1] = interpolate_log_linear(p4_energy, energy_one, energy_two, 0.5*p0p->get_value(0), 0.5*secondp0p->get_value(0));
-
-        //1/2(p0py)
-        results[2] = interpolate_log_linear(p4_energy, energy_one, energy_two, 0.5*p0p->get_value(1), 0.5*secondp0p->get_value(1));
-
         //1/2(p0-p0pz)
         results[3] = interpolate_log_linear(p4_energy, energy_one, energy_two, 0.5*(this->p0(index, neutrino) - p0p->get_value(2)), 0.5*(this->p0(index+1, neutrino) - secondp0p->get_value(2)));
+        
+        results[1] = interp_extrap_P0Pxy(p4_energy, results[0]+results[3], energy_one, energy_two, this->p0(index, neutrino), 0.5*p0p->get_value(0), this->p0(index+1,neutrino), 0.5*secondp0p->get_value(0));
+
+        results[2] = interp_extrap_P0Pxy(p4_energy, results[0]+results[3], energy_one, energy_two, this->p0(index, neutrino), 0.5*p0p->get_value(1), this->p0(index+1,neutrino), 0.5*secondp0p->get_value(1));
+
+        //1/2(p0px)
+        //results[1] = interpolate_log_linear(p4_energy, energy_one, energy_two, 0.5*p0p->get_value(0), 0.5*secondp0p->get_value(0));
+
+        //1/2(p0py)
+        //results[2] = interpolate_log_linear(p4_energy, energy_one, energy_two, 0.5*p0p->get_value(1), 0.5*secondp0p->get_value(1));
+
+
 
         delete secondp0p;
     }
@@ -501,11 +510,26 @@ double density::interpolated_matrix(bool neutrino, int index, double p4_energy, 
 
     
     //p0
-    p0 = results[0] + results[3];
+    //p0 = results[0] + results[3];
+
+    double temp = results[0] + results[3];
     delete[] results;
 
     
-    return p0;
+    return temp;
+
+}
+
+double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double P01, double y1, double P02, double y2){
+    if( (y1>0 && y2>0 && y2>y1) || (y1<0 && y2<0 && y2<y1) )
+        return interpolate_log_linear(x, x1, x2, y1, y2);
+    else{
+        //return interpolate_log_linear(x, x1, x2, y1, y2);
+        double Pxy = 0.;
+        Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
+        return P0_new * Pxy;
+    }
+        
 
 }
 
