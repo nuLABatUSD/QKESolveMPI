@@ -24,7 +24,7 @@ int main(int argc, char* argv[]){
     string run_filename = string(argv[7]) + "_run.csv";
     string eps_filename = string(argv[7]) + "_eps.csv";
     
-    sim->run(1000, 1000, 5e20, run_filename, true);
+    sim->run(1000, 1, 5e20, run_filename, true);
 
     ofstream eps_file;
     eps_file.open(eps_filename);
