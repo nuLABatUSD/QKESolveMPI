@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import subprocess
 
 hbar = 6.582e-22
 GF = 1.166e-11
@@ -34,10 +36,16 @@ def make_data_dictionary(data_file, eps_file):
     f_mbar = 0.5*P0bar*(1-Pzbar)
 
     results['f'] = [f_e, f_m, f_ebar, f_mbar]
+    
     results['Tcm'] = data[-1,-1]
 
     results['eps'] = eps_data[0]
     results['w'] = eps_data[1]
+
+    dnde = []
+    for i in range(4):
+        dnde.append(results['f'][i] * results['eps']**2 / (2 * np.pi**2))
+    results['dnde'] = dnde
 
     return results
 
@@ -128,3 +136,35 @@ def num_density(data):
             n[i,j] = np.sum(dn[i,j,:] * w)
 
     return n * data['Tcm']**3
+
+def run_coherentsolve(outfile_name, Tcm=32, dm2=1.e-18, ke=0.9, km=1.8, kebar=0.9, kmbar=1.8):
+    res = subprocess.run("cd .. && bash script/run_coherent.sh {} {} {} {} {} {} analysis/{}".format(Tcm, ke, km, kebar, kmbar, dm2, outfile_name), shell=True, capture_output=True)
+
+def find_coherent_frequency_MHz(Tcm=32, dm2=1.e-18, ke=0.9, km=1.8, kebar=0.9, kmbar=1.8):
+    run_coherentsolve("asym", Tcm, dm2, ke, km, kebar, kmbar)
+
+    asym = make_data_dictionary("asym_run.csv", "asym_eps.csv")
+
+    V_asym = V_mat(asym)
+    t = asym['time']
+    dv = np.diff(V_asym[1])
+    t_max = []
+    for i in range(len(dv)-1):
+        if dv[i] >= 0 and dv[i+1] < 0:
+            t_zero = t[i] - dv[i] * (t[i+1]-t[i])/(dv[i+1]-dv[i])
+            t_max.append(t_zero)
+    
+    f = (1/np.diff(t_max))[1:]
+
+    if np.std(f) < 0.01 * np.mean(f):
+        subprocess.run("rm asym_run.csv", shell=True, capture_output=True)
+        subprocess.run("rm asym_eps.csv", shell=True, capture_output=True)
+        return np.mean(f)
+    else:
+        plt.plot(t, V_asym[1])
+        plt.xlabel("t")
+        plt.ylabel(r"$V_y$")
+        print("Error: significant variance in frequency calculation.")
+        return np.mean(f)
+        
+        
