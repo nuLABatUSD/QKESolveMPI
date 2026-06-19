@@ -116,6 +116,7 @@ void matrix::matrix_multiply(matrix* C1, matrix* C2){
     C1_A->multiply_by(C2_A0);
     C2_A->multiply_by(C1_A0);
     A->add(C1_A, C2_A);
+    cp->multiply_by(complex<double>(0.,1.));
     A->add(A,cp);
     
     
