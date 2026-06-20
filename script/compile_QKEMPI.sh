@@ -1,7 +1,15 @@
 #!/usr/bin/bash
 if [ $# -ne 1 ]; then
-    echo "usage: bash compile_QKEMPI.sh output_filename"
-    exit 1
+    if [ $# -ne 2 ]; then
+        echo "usage: bash compile_QKEMPI.sh output_filename <opt: time>"
+        exit 1
+    fi
+fi
+
+if [ $# -eq 2 ]; then
+    hrs=$2
+else
+    hrs="12"
 fi
 
 output_base=$1
@@ -33,7 +41,7 @@ if [ -f $program_name ]; then
     echo "#SBATCH --ntasks=128" >> $execute_file
     echo "#SBATCH -J ${output_base}" >> $execute_file
     echo "#SBATCH -p wholenode" >> $execute_file
-    echo "#SBATCH --time=12:00:00" >> $execute_file
+    echo "#SBATCH --time=${hrs}:00:00" >> $execute_file
     echo "#SBATCH --mail-user=ckishimoto@sandiego.edu" >> $execute_file
     echo "#SBATCH --mail-type=all" >> $execute_file
     
@@ -48,5 +56,5 @@ if [ -f $program_name ]; then
     echo "" >> $param_file
     echo "// Git version ${git_version}" >> $param_file
 
-    echo "Ready to run: sbatch ${execute_file}"
+    echo "Ready to run for ${hrs} hours: sbatch ${execute_file}"
 fi
