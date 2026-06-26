@@ -478,16 +478,17 @@ void QKEMPI::print_test_steps(ostream& os, int max_steps){
         for(int j = 0; j < 10; j++){
             RKCash_Karp(x, y, dx_try, &x_next, y5, y4);
             if(myid == 0){
+                os << j << ", " << dx_try << ", ";
                 k1->print_csv(os);
-                os << endl;
+                os << endl << "2, " << dx_try << ", ";
                 k2->print_csv(os);
-                os << endl;
+                os << endl << "3, " << dx_try << ", ";
                 k3->print_csv(os);
-                os << endl;
+                os << endl << "4, " << dx_try << ", ";
                 k4->print_csv(os);
-                os << endl;
+                os << endl << "5, " << dx_try << ", ";
                 k5->print_csv(os);
-                os << endl;
+                os << endl << "6, " << dx_try << ", ";
                 k6->print_csv(os);
                 os << endl;
             }
@@ -502,4 +503,22 @@ void QKEMPI::print_test_steps(ostream& os, int max_steps){
             }
         }        
     }
+
+    delete y;
+    delete y5;
+    delete y4;
 }
+
+void QKEMPI::set_density_object_for_test(double* density_test_array){
+    for(int i = 0; i < y_values->get_length(); i++)
+        y_values->set_value(i, density_test_array[i]);
+}
+
+void QKEMPI::set_xvalue(double x){
+    x_value = x;
+}
+
+void QKEMPI::set_dxvalue(double dx){
+    dx_value = dx;
+}
+

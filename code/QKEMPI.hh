@@ -59,6 +59,9 @@ class QKEMPI{
         void print_state();
         void print_csv(ostream&);
 
+        void set_xvalue(double);
+        void set_dxvalue(double);
+
         void f(double, density*, density*);
         void f_evaluate(density*);
         double first_derivative(double, density*, density*, double, double*);
@@ -72,7 +75,7 @@ class QKEMPI{
         
         bool run(int, int, double, const string&, bool=true);
 
-        void set_density_object_for_test();
+        void set_density_object_for_test(double*);
         void print_test_steps(ostream&, int=1);
 };
 
