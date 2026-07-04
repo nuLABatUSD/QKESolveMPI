@@ -7,8 +7,9 @@ double linear(double, double, double, double, double);
 
 double extrapolate_exponential(double, double, double, double, double);
 double extrapolate_linear(double, double, double, double, double);
+double extrapolate_log_quad(double, double, double, double, double);
 
-double interp_extrap_P0Pxy(double, double, double, double, double, double, double, double);
+double interp_extrap_P0Pxy(double, double, double, double, double, double, double, double, bool);
 
 
 void three_vector_for_QKE::v_vacuum(double delta_m_squared, double cos_2theta, double sin_2theta ){
@@ -488,9 +489,9 @@ double density::interpolated_matrix(bool neutrino, int index, double p4_energy, 
         //1/2(p0-p0pz)
         results[3] = interpolate_log_linear(p4_energy, energy_one, energy_two, 0.5*(this->p0(index, neutrino) - p0p->get_value(2)), 0.5*(this->p0(index+1, neutrino) - secondp0p->get_value(2)));
         
-        results[1] = interp_extrap_P0Pxy(p4_energy, results[0]+results[3], energy_one, energy_two, this->p0(index, neutrino), 0.5*p0p->get_value(0), this->p0(index+1,neutrino), 0.5*secondp0p->get_value(0));
+        results[1] = interp_extrap_P0Pxy(p4_energy, results[0]+results[3], energy_one, energy_two, this->p0(index, neutrino), 0.5*p0p->get_value(0), this->p0(index+1,neutrino), 0.5*secondp0p->get_value(0), p4_energy > E->get_max_value());
 
-        results[2] = interp_extrap_P0Pxy(p4_energy, results[0]+results[3], energy_one, energy_two, this->p0(index, neutrino), 0.5*p0p->get_value(1), this->p0(index+1,neutrino), 0.5*secondp0p->get_value(1));
+        results[2] = interp_extrap_P0Pxy(p4_energy, results[0]+results[3], energy_one, energy_two, this->p0(index, neutrino), 0.5*p0p->get_value(1), this->p0(index+1,neutrino), 0.5*secondp0p->get_value(1), p4_energy > E->get_max_value());
 
         //1/2(p0px)
         //results[1] = interpolate_log_linear(p4_energy, energy_one, energy_two, 0.5*p0p->get_value(0), 0.5*secondp0p->get_value(0));
@@ -520,17 +521,56 @@ double density::interpolated_matrix(bool neutrino, int index, double p4_energy, 
 
 }
 
-double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double P01, double y1, double P02, double y2){
-    if( (y1>0 && y2>0 && y2>y1) || (y1<0 && y2<0 && y2<y1) )
+double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double P01, double y1, double P02, double y2, bool extrapolate){
+    if( (y1>0 && y2>0 && y2<y1) || (y1<0 && y2<0 && y2>y1) )
         return interpolate_log_linear(x, x1, x2, y1, y2);
     else{
         //return interpolate_log_linear(x, x1, x2, y1, y2);
         double Pxy = 0.;
         Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
         return P0_new * Pxy;
+
+        if (extrapolate)
+            Pxy = extrapolate_log_quad(x, x1, x2, y1/P01, y2/P02);
+        else
+        //    Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
+            Pxy = linear(x, x1, x2, y1/P01, y2/P02);
+        return P0_new * Pxy;
     }
         
 
+}
+
+double extrapolate_log_quad(double x, double x1, double xmax, double y1, double ymax){
+    double sign = 1.;
+    double shift = 0.;
+
+    if(ymax < 0)
+        sign = -1.;
+
+    double log_max = log(sign * ymax);
+
+    double log_1;
+    if (y1 * ymax <= 0){
+        log_1 = log(- sign * y1);
+        if (log_1 > log_max)
+            log_1 = log_max - log(2);
+    }
+    else
+        log_1 = log(sign * y1);
+
+    double x2 = xmax + (xmax - x1);
+
+
+    double result_exp = 0.;
+
+    result_exp += log_1 * (x-xmax) * (x - x2) / (x1 - xmax) / (x1 - x2);
+    result_exp += log_max * (x - x1) * (x - x2) / (xmax - x1) / (xmax - x2);
+    result_exp += log_1 * (x - x1) * (x - xmax) / (x2 - x1) / (x2 - xmax);
+
+    return sign * exp(result_exp);
+
+    
 }
 
 double interpolate_log_fifth(double x, double* x_vals, double* y_vals){

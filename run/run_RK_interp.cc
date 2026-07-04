@@ -6,21 +6,28 @@ int main(int argc, char* argv[]){
 
     ofstream file;
     file.open(argv[1]);
+    ofstream file_eps;
+    file_eps.open(argv[2]);
 
     ofstream orig;
-    orig.open(argv[2]);
+    orig.open(argv[3]);
+    ofstream orig_eps;
+    orig_eps.open(argv[4]);
     
     linspace_and_gl* eps = new linspace_and_gl(0., EPS_MAX_LINSPACE, EPS_LINSPACE_POINTS, 5);
     density* model = new density(eps->get_length(), eps);
 
-    linspace_for_trap* bins = new linspace_for_trap(0., 2 * eps->get_max_value(), 1000);
+    linspace_for_trap* bins = new linspace_for_trap(eps->get_value(1)/2., 2 * eps->get_max_value(), 1000);
     density* interp_model = new density(bins->get_length(), bins);
 
-    bins->print_csv(file);
-    file << endl;
+    bins->print_csv(file_eps);
+    file_eps << endl;
 
-    eps->print_csv(orig);
-    file << endl;
+    eps->print_csv(orig_eps);
+    orig_eps << endl;
+
+    file_eps.close();
+    orig_eps.close();
     
     int index;
     three_vector* P0P = new three_vector();

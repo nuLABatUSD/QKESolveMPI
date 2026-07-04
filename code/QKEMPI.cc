@@ -41,6 +41,10 @@ QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, 
     tol = ODE_SOLVER_TOLERANCE;
     TINY = ODE_SOLVER_TINY;
     Safety = ODE_SOLVER_SAFETY;
+
+    just_h->set_tolerance(tol);
+    just_h->set_tiny(TINY);
+    just_h->set_safety(Safety);
     
     total_ODE_steps = 0;
     total_ODE_rejected_steps = 0;
