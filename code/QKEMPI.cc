@@ -15,6 +15,18 @@
 #define ODE_SOLVER_SAFETY 0.9
 #endif
 
+#ifndef COHERENT_SOLVER_TOLERANCE
+#define COHERENT_SOLVER_TOLERANCE ODE_SOLVER_TOLERANCE
+#endif
+
+#ifndef COHERENT_SOLVER_TINY
+#define COHERENT_SOLVER_TINY ODE_SOLVER_TINY
+#endif
+
+#ifndef COHERENT_SOLVER_SAFETY
+#define COHERENT_SOLVER_SAFETY ODE_SOLVER_SAFETY
+#endif
+
 QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, double dx0, linspace_and_gl* e, density* ic) {
     myid = rank;
     numprocs = numranks;
@@ -42,9 +54,9 @@ QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, 
     TINY = ODE_SOLVER_TINY;
     Safety = ODE_SOLVER_SAFETY;
 
-    just_h->set_tolerance(tol);
-    just_h->set_tiny(TINY);
-    just_h->set_safety(Safety);
+    just_h->set_tolerance(COHERENT_SOLVER_TOLERANCE);
+    just_h->set_tiny(COHERENT_SOLVER_TINY);
+    just_h->set_safety(COHERENT_SOLVER_SAFETY);
     
     total_ODE_steps = 0;
     total_ODE_rejected_steps = 0;
