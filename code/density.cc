@@ -527,8 +527,8 @@ double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double
     else{
         //return interpolate_log_linear(x, x1, x2, y1, y2);
         double Pxy = 0.;
-        Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
-        return P0_new * Pxy;
+//        Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
+/        return P0_new * Pxy;
 
         if (extrapolate)
             Pxy = extrapolate_log_quad(x, x1, x2, y1/P01, y2/P02);
