@@ -525,22 +525,9 @@ double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double
     if( (y1>0 && y2>0 && y2<y1) || (y1<0 && y2<0 && y2>y1) )
         return interpolate_log_linear(x, x1, x2, y1, y2);
     else{
-        //return interpolate_log_linear(x, x1, x2, y1, y2);
         double Pxy = 0.;
-//        Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
-//        return P0_new * Pxy;
-
-        if (y1 == 0 || y2 == 0)
-            return P0_new * extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
-
-        if (extrapolate)
-            Pxy = extrapolate_log_quad(x, x1, x2, y1/P01, y2/P02);
-        else
-        //    Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
-            Pxy = linear(x, x1, x2, y1/P01, y2/P02);
+        Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
         return P0_new * Pxy;
-    }
-        
 
 }
 
