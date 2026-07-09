@@ -528,7 +528,7 @@ double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double
         double Pxy = 0.;
         Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
         return P0_new * Pxy;
-
+    }
 }
 
 double extrapolate_log_quad(double x, double x1, double xmax, double y1, double ymax){
