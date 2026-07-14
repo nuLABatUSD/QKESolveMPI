@@ -414,9 +414,9 @@ print(len(Pz2[0]))
  
 print("printing graphs, this may take a bit ...")
 debug_all_line(eps, eps2, P0, P02, "P0")
-#debug_all_line(eps, eps2, Px, Px2, "Px")
-#debug_all_line(eps, eps2, Py, Py2, "Py")
-#debug_all_line(eps, eps2, Pz, Pz2, "Pz")
+debug_all_line(eps, eps2, Px, Px2, "Px")
+debug_all_line(eps, eps2, Py, Py2, "Py")
+debug_all_line(eps, eps2, Pz, Pz2, "Pz")
 
 #debugging graphs to overlay the original
 #   and to overlay the new modified graphs
