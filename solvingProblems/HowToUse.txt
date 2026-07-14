@@ -1,1 +1,21 @@
 
+how to use solving problems folder:
+
+one thing to note before learning how this folder works. 
+  1st, some pathways may need to change depending on where you are accessing it from. should be an easy fix.
+  2nd, this folder will create about 100 graphs, split amongst the folders graph_find_errors & graphs_output. not recommended to run on an old computer
+
+there should realistically be 2 files that need to be ran.
+  - run_pipline.sh
+  - run_graph_pipeline.sh
+
+run_pipline.sh 
+    - is  a shell scrip file that will need to take in multiple files, a slurm file (such as slurm-18475761.txt) , a dataset(such as 65-fix_10_small.csv), the epsilong and weight file (such as  06-nu_e_coll-eps.csv)
+    - the file will output the following files: error_info.txt, dataset_info.txt, epsilon_and_weights.txt, errorFound.txt, UltimateGenericName.hh, MaximumGenericName.hh
+    - the file will exectue the files in order of: Findissues -> dataCompare -> OutputVsData -> testCreator -> specificTestCreator
+    - the file will first run Findissues, which will find a bunch of sample issues, such as most common error cases found, largest dsm values, etc. not used, but good to see where the potential issues lie. then the code will run dataCompare, which will condense the dataset so the code doesnt have to compare all potential values and only compare the data we need to compare, but this file will also produce a file that will be easy for us to see and use all the epsilon and weight values. after which the code will run OutputVsData, which will spew out all specific cases relating to a specific index value. then will run testCreator which will create a header relating to the entire error case. which we can then further reduce with specificTestCreator. with specificTestCreator allows us to simplify couple hundred cases to a few cases we can test out. and we can choose what you need. mode inside the shell file will determine what case you need, find 1 specific case, find multiple specific case, or find the largest dsm case. after which you will need to enter into the terminal, or what ever program you are using to run the file, to enter what you are looking for specifically and/or how many you need. 
+
+run_graph_pipeline.sh:
+    - is  a shell scrip file that will need to take in multiple files, RKoutput, the epsilong and weight file (such as  06-nu_e_coll-eps.csv  for example), RKextrap_original, and RKextrap
+    - the files in order that will be ran are. extrapolationCreation -> test_RK_interpolation -> graphingTime -> graphingTimeExtrapolation
+    - the file first, creates a test scenario given from, extrapolationCreation. which will then be put into test_RK_interpolation. that file will give us 2 important csv files, which we will use for both graphingTime and graphingTimeExtrapolation. in graphingTime, we plot a lot of graphs using the conditions of the original values, along with the original epsilon values, which is the interprolation. while in graphingTimeExtrapolation, is the extrapolation; this file will plot many extrapolation graphs, showing our result from doing the extrapolation prediction. 
