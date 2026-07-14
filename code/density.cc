@@ -520,17 +520,32 @@ double density::interpolated_matrix(bool neutrino, int index, double p4_energy, 
 
 }
 
-double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double P01, double y1, double P02, double y2){
-    if( (y1>0 && y2>0 && y2>y1) || (y1<0 && y2<0 && y2<y1) )
-        return interpolate_log_linear(x, x1, x2, y1, y2);
-    else{
-        //return interpolate_log_linear(x, x1, x2, y1, y2);
-        double Pxy = 0.;
-        Pxy = extrapolate_linear(x, x1, x2, y1/P01, y2/P02);
-        return P0_new * Pxy;
-    }
-        
+double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double P01, double y1, double P02, double y2)
+{
+    const bool use_log =
+        (y1 > 0.0 && y2 > 0.0 && y2 > y1) ||
+        (y1 < 0.0 && y2 < 0.0 && y2 < y1);
 
+    const double t = (x - x1) / (x2 - x1);
+
+    if (use_log && ((t >= 0.0 && t <= 1.0) || (t <= 0.0 && t >= -1.0))) // && x <= 32.64080084427578)
+    {
+        return interpolate_log_linear(x, x1, x2, y1, y2);
+    }
+    if (P01 == 0.0 || P02 == 0.0)
+    {
+        return y2;
+    }
+
+    const double raw_ratio1 = y1 / P01;
+    const double raw_ratio2 = y2 / P02;
+
+    const double ratio1 = raw_ratio1; 
+    const double ratio2 = raw_ratio2; 
+
+    const double Pxy = extrapolate_linear(x, x1, x2, ratio1, ratio2);
+
+    return P0_new * Pxy;
 }
 
 double interpolate_log_fifth(double x, double* x_vals, double* y_vals){
@@ -618,27 +633,59 @@ double extrapolate_exponential(double x, double x1, double x2, double y1, double
 }
 
 
-double extrapolate_linear(double x, double x1, double x2, double y1, double y2){
-    if(x2-x1==0){std::cout << "warning: attempting to divide by 0**" << x << std::endl;}
-    double slope = (y2-y1)/(x2-x1);
-    double Delta = slope * (x - x2);
-    double result = 0;
-
-    if (Delta > 0){
-        if (y2 < 1){
-            return y2 + (1 - y2) * std::tanh(Delta/(1-y2));
-        }
-        else{
-            return 1.0;
-        }
+double extrapolate_linear(
+    double x,
+    double x1,
+    double x2,
+    double y1,
+    double y2)
+{
+    if (std::abs(x2 - x1) == 0)
+    {
+        return y2;
     }
-    else{
-        if (y2 > -1){
-            return y2 + (y2 + 1) * std::tanh(Delta/(y2+1));
-        }
-        else{
-            return -1.0;
-        }
+
+    if (!std::isfinite(y1) || !std::isfinite(y2))
+    {
+        return y2;
+    }
+
+    const double slope = (y2 - y1) / (x2 - x1);
+    const double Delta = slope * (x - x2);
+    
+    if (std::abs(x2 - x1) == 0)
+    {
+        cout << "x2-x1 results in a 0, in extrapolate_linear"<< endl;
+        return y2;
+    }
+    //checks if x1 and x2 doesnt result in a difference of 0, just in case.
+
+    if (!std::isfinite(y1) || !std::isfinite(y2))
+    {
+        cout << "y1 or y2 is infinity, in extrapolate_linear" << endl;
+        return y2;
+    }
+    //ensures that y1 or y2 doesnt become infinity
+
+    if (!std::isfinite(Delta))
+    {
+        cout << "delta is infinity, in extrapolate_linear" << endl;
+        return y2;
+    }
+    //ensures no infinity is detected
+
+    if (Delta > 0.0)
+    {
+        const double distance = 1.0 - y2;
+
+        return y2 + distance * std::tanh(Delta / distance);
+             
+    }
+    else
+    {
+        const double distance = y2 + 1.0;
+
+        return y2 + distance * std::tanh(Delta / distance);
     }
 }
 
