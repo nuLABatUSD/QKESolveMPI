@@ -318,7 +318,6 @@ int main(int argc, char* argv[])
     //slurm-18329938-Copy   output data 1
     //slurm-18475761        output data 2
     string fileAName = "./solvingProblems/" + slurm;
-    //string fileBName = "C:/Users/astar/Desktop/workspace/QKESolveMPI-main/solvingProblems/59-QKE_fix_mat.csv";
     string fileBName = "./solvingProblems/" + dataset_info;
 
     ifstream fileA(fileAName);
@@ -348,23 +347,12 @@ int main(int argc, char* argv[])
     }
 
     const int targetIndex = 818;
-    /*
-    index values = 818 appeared 178 times		2 is the index value thus P_y is the problem
-    index values = 814 appeared 174 times		2 is the index value thus P_y is the problem
-    index values = 810 appeared 166 times		2 is the index value thus P_y is the problem
-    index values = 806 appeared 162 times		2 is the index value thus P_y is the problem
-    index values = 822 appeared 138 times		2 is the index value thus P_y is
-    */
    /*
-   818 
-   814 
-   810 
-   806 
-   822 
-   821 has 1 data point but the largest dsm value
-
-
-   */
+    =====================================================================================
+    important variable above
+    =====================================================================================
+    allows us to see which specific error case we want to look at
+    */
 
     std::regex indexPattern(R"(problem index\s*=\s*(\d+))");
 
