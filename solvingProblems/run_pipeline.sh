@@ -1,4 +1,4 @@
-#C:/msys64/usr/bin/bash.exe
+#!/bin/sh
 
 set -e
 pathing="./solvingProblems/"
