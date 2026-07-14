@@ -8,11 +8,16 @@ pathing="./solvingProblems/"
 #   the reason is to see where issues may have occured and to see if the code is
 #   comparing things properly
 
-SLURM_OUTPUT="slurm-18475761.txt"
+#SLURM_OUTPUT="slurm-18475761.txt"
+read -p "enter SLURM_OUTPUT file name: " SLURM_OUTPUT
 #just the output of all the error cases
-ORIGINAL_DATASET="65-fix_10_small.csv"
+
+#ORIGINAL_DATASET="65-fix_10_small.csv"
+read -p "enter ORIGINAL_DATASET file name: " ORIGINAL_DATASET
 #this is for the data set with all the density values
-MODIFYING_VALUES="06-nu_e_coll-eps.csv"
+
+#MODIFYING_VALUES="06-nu_e_coll-eps.csv"
+read -p "enter MODIFYING_VALUES file name: " MODIFYING_VALUES
 #this is for the epsilon and weights csv file
 
 # Output files created by programs
@@ -51,10 +56,12 @@ g++ "${pathing}/specificTestCreator.cpp" -std=c++17 -o specificTestCreator.cpp
 echo "Running Findissues..."
 ./Findissues.cpp "$SLURM_OUTPUT"
 # produces error_info.txt
+#fixed
 
 echo "Running dataCompare..."
 ./dataCompare.cpp "$ORIGINAL_DATASET" "$MODIFYING_VALUES"
 # produces dataset_info.txt and epsilon_and_weights.txt
+#fixed
 
 echo "Running OutputVsData..."
 ./OutputVsData.cpp "$SLURM_OUTPUT" "$DATASET_INFO"
@@ -63,10 +70,12 @@ echo "Running OutputVsData..."
 #   to a specific error case. look for targetIndex if 
 #   you wish to change the specific error cases we are finding
 # produces errorFound.txt
+#fixed
 
 echo "Running testCreator..."
 ./testCreator.cpp "$SLURM_OUTPUT" "$ORIGINAL_DATASET" "$DATASET_INFO"
 # produces UltimateGenericName.hh
+#fixed
 
 echo "Running specificTestCreator..."
 ./specificTestCreator.cpp "$ULTIMATE_HEADER" "$mode"
@@ -77,3 +86,7 @@ echo "Running specificTestCreator..."
 #   find multiple of a specific case
 
 echo "Done."
+
+echo "deleting $EPSILON_WEIGHTS ..."
+rm -f "${pathing}$EPSILON_WEIGHTS"
+
