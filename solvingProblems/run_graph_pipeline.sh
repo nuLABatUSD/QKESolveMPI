@@ -1,4 +1,3 @@
-#C:/msys64/usr/bin/bash.exe
 #!/bin/sh
 
 #. ./script/test_RK_interpolation.sh
