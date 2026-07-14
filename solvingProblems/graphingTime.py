@@ -177,10 +177,10 @@ binnumber = 1
 eps = eps_data[0]
 
 print("creating graphs, this may take a bit...")
-#plot_all_datasets(eps, P0, "P0")
-#plot_all_datasets(eps, Px, "Px")
-#plot_all_datasets(eps, Py, "Py")
-#plot_all_datasets(eps, Pz, "Pz")
+plot_all_datasets(eps, P0, "P0")
+plot_all_datasets(eps, Px, "Px")
+plot_all_datasets(eps, Py, "Py")
+plot_all_datasets(eps, Pz, "Pz")
 
 #this code here is where all the inputs happen to create the graphs with the initial 
 #   epsilon values 
