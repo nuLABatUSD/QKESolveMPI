@@ -5,9 +5,10 @@ one thing to note before learning how this folder works.
   1st, some pathways may need to change depending on where you are accessing it from. should be an easy fix.
   2nd, this folder will create about 100 graphs, split amongst the folders graph_find_errors & graphs_output. not recommended to run on an old computer
 
-there should realistically be 2 files that need to be ran.
+there should realistically be 3 files that need to be ran.
   - run_pipline.sh
   - run_graph_pipeline.sh
+  - lastlineScript.sh
 
 run_pipline.sh 
     - is  a shell scrip file that will need to take in multiple files, a slurm file (such as slurm-18475761.txt) , a dataset(such as 65-fix_10_small.csv), the epsilong and
@@ -31,3 +32,6 @@ RKextrap_original, and RKextrap
 files, which we will use for both graphingTime and graphingTimeExtrapolation. in graphingTime, we plot a lot of graphs using the conditions of the original values, along
 with the original epsilon values, which is the interprolation. while in graphingTimeExtrapolation, is the extrapolation; this file will plot many extrapolation graphs,
 showing our result from doing the extrapolation prediction. 
+
+lastlineScript.sh:
+    - is a shell script that will take in the csv file, read and store the last line, and create a header file using the values from the last rows 
