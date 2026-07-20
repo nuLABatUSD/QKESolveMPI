@@ -1,0 +1,29 @@
+THIS ENTIRE FOLDER IS INCOMPLETE, IF POSSIBLE DO NOT USE UNTIL FINISHED
+=============================================================================
+
+this is mainly here to remind me, the operator of this folder
+  to update the code and remind me on what the code is supposed to do
+
+task of the folder:
+  create a file or batch of files to help create an optimal distribtion of 
+  work across all the workers for the super computer 
+
+task:
+    create a header file with the following:
+        int max_jobs = ##;
+        int core_jobs[N_cores][##] = {…};
+        Int expected_load_value[N_cores] = {…};
+    
+    intputs: 
+        number of cores, 
+        number of trapezoid bins, 
+        and eps_max
+
+    currently have the distribution methods.
+    now i need to go ahead and form a way to 
+
+we need to output a 1 file, that one file will will have the 4
+    epsilon values
+    the trapazoid bins
+    the load factors
+    all from an output from a file. which is calculate_diagnostics.cc 
