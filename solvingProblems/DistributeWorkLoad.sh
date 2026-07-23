@@ -3,12 +3,10 @@
 csvpath="./solvingProblems/WorkerHeaderCreation"
 csvname="$csvpath/load_factors3.csv"
 
-compiler="C:/msys64/mingw64/bin/g++.exe"
-#this is compiler pathway, so it can run all the files
-
-diagnosticsSource="./run/calculate_diagnostics.hh"
-diagnosticsCode="./run/calculate_diagnostics.cc"
-diagnosticsProgram="./run/calculate_diagnostics.exe"
+#cal_load_factors
+#original file is calculate_diagnostics.cc
+diagnosticsCode="./solvingProblems/WorkerHeaderCreation/cal_load_factors.cc"
+diagnosticsProgram="./solvingProblems/WorkerHeaderCreation/cal_load_factors.exe"
 
 pathtovars="../base_code-main/base_arrays.cc"
 densitypath="./code/density.cc"
@@ -18,17 +16,19 @@ matrixpath="./code/matrices.cc"
 thermopath="./code/thermodynamics.cc"
 #the relative pathways here may need to change 
 #   depending on where the base code main files are located 
-read -r -p "Enter collisionType: " collisionType
-read -r -p "Enter N_TRAP name: " N_TRAP
-read -r -p "Enter EPS_MAX file name: " EPS_MAX
-read -r -p "Enter N_CORES file name: " N_CORES
+#read -r -p "Enter collisionType: " collisionType
+#read -r -p "Enter N_TRAP name: " N_TRAP
+#read -r -p "Enter EPS_MAX file name: " EPS_MAX
+#read -r -p "Enter N_CORES file name: " N_CORES
 
-#collisionType="0"
-#N_TRAP="201"
-#EPS_MAX="20"
-#N_CORES="128"
+collisionType="0"
+N_TRAP="201"
+EPS_MAX="20"
+N_CORES="128"
 
-tempCSV="./solvingProblems/WorkerHeaderCreation/load_factors.csv"
+tempCSV="$csvname"
+#   this was here, incase i need to see what the printed csv file 
+#   looks like and have a reference for later.
 
 if [ ! -d "$csvpath" ]; then
     mkdir -p "$csvpath"
@@ -43,18 +43,10 @@ echo
 echo "Compiling calculate_diagnostics.cc..."
 echo
 
-"$compiler" \
-    "$diagnosticsCode" \
-    "$pathtovars" \
-    "$densitypath" \
-    "$arrpath" \
-    "$qkepath" \
-    "$matrixpath" \
-    "$thermopath" \
-    -std=c++17 -O2 -o "$diagnosticsProgram"
 
-
-
+diagnosticsCode="./solvingProblems/WorkerHeaderCreation/cal_load_factors.cc"
+diagnosticsProgram="./solvingProblems/WorkerHeaderCreation/cal_load_factors.exe"
+    
 g++ \
     "$diagnosticsCode" \
     "$pathtovars" \
@@ -65,6 +57,7 @@ g++ \
     "$thermopath" \
     -std=c++17 -O2 -o "$diagnosticsProgram"
 #"$compiler" "$diagnosticsSource" -std=c++17 -o "$diagnosticsProgram"
+
 
 compile_status=$?
 
@@ -121,9 +114,6 @@ echo "Output saved to:"
 echo "$tempCSV"
 
 #=======================================================================
-
-#g++ ./solvingProblems/WorkerHeaderCreation/headerCreation.cc -std=c++17 -o headerCreation.cc
-#./headerCreation  "$N_CORES" "$N_TRAP" "$EPS_MAX" "$tempCSV"
 
 headerSource="./solvingProblems/WorkerHeaderCreation/headerCreation.cc"
 headerProgram="./solvingProblems/WorkerHeaderCreation/headerCreation.exe"
@@ -183,6 +173,6 @@ g++ ./solvingProblems/WorkerHeaderCreation/theRemover.cc -std=c++17 -o theRemove
 
 #this code here deletes the file, this is because the bash command is
 #   not working for me
-# ./theRemover.cc "$csvname"
+ ./theRemover.cc "$csvname"
 
 echo "CSV file has been successfully deleted."
