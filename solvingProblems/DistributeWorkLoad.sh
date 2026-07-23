@@ -1,4 +1,3 @@
-#C:/msys64/usr/bin/bash.exe
 #!/bin/sh
 
 csvpath="./solvingProblems/WorkerHeaderCreation"
