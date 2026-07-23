@@ -1,11 +1,11 @@
 #!/bin/bash
 
-
 pathing="./solvingProblems"
 
-read -r -p "Enter lastLine file name: " lastLine
+#read -r -p "Enter lastLine file name: " lastLine
+#   no need to make it interactive, but ill keep it here incase we need it
 
-inputFile="$pathing/$lastLine"
+inputFile="$pathing/$1"
 sourceFile="$pathing/restartCreator.cpp"
 executable="$pathing/restartCreator.exe"
 
@@ -19,14 +19,16 @@ fi
 # Compile restartCreator.cpp.
 g++ "$sourceFile" -std=c++17 -o "$executable"
 
+"$executable" "$inputFile" 
+
 if [[ $? -ne 0 ]]; then
     echo "Error: restartCreator.cpp failed to compile."
     exit 1
 fi
 
-echo "Watching: $inputFile"
-echo "Press Ctrl+C to stop manually."
-
+#echo "Watching: $inputFile"
+#echo "Press Ctrl+C to stop manually."
+: '''
 # Number of seconds without a new completed line before stopping.
 idle_limit=10
 idle_seconds=0
@@ -40,7 +42,7 @@ count_complete_lines() {
         ((count++))
     done < "$inputFile"
 
-    printf '%s\n' "$count"
+    #printf %s\n "$count"
 }
 
 previous_count=$(count_complete_lines)
@@ -83,3 +85,5 @@ done
 
 echo "The file has not received a completed line for $idle_limit seconds."
 echo "Stopping file watcher."
+'''
+#commenting this out, incase this code is useful later on.
