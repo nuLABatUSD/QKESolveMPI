@@ -5,7 +5,7 @@ pathing="./solvingProblems"
 #read -r -p "Enter lastLine file name: " lastLine
 #   no need to make it interactive, but ill keep it here incase we need it
 
-inputFile="$pathing/$1"
+inputFile="$1"
 sourceFile="$pathing/restartCreator.cpp"
 executable="$pathing/restartCreator.exe"
 
