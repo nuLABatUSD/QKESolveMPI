@@ -21,10 +21,15 @@ thermopath="./code/thermodynamics.cc"
 #read -r -p "Enter EPS_MAX file name: " EPS_MAX
 #read -r -p "Enter N_CORES file name: " N_CORES
 
-collisionType="0"
-N_TRAP="201"
-EPS_MAX="20"
-N_CORES="128"
+#collisionType="0"
+#N_TRAP="201"
+#EPS_MAX="20"
+#N_CORES="128"
+
+collisionType="$1"
+N_TRAP="$2"
+EPS_MAX="$3"
+N_CORES="$4"
 
 tempCSV="$csvname"
 #   this was here, incase i need to see what the printed csv file 
