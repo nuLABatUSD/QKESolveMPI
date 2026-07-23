@@ -12,10 +12,12 @@
 #include <queue>
 #include <stdexcept>
 #include <utility>
+#include <cmath>
+#include <limits>
 
-#include "../../code/include.hh"
-#include "../../run/calculate_diagnostics.cc"
-
+//#include "../../solvingProblems/WorkerHeaderCreation/theRemover.cc"
+//ignore this, its just here to remind me the relative location is
+//  in perspective of this file
 
 // DATA TYPES
 
@@ -1014,176 +1016,149 @@ void createHeaderFile(
         << " workers.\n";
 }
 
+// CSV INPUT AND COLLISION-INTEGRAL TASK CREATION
 
-// REAL COLLISION-INTEGRAL TASK CREATION
+std::vector<std::string> splitCsvRow(const std::string& line)
+{
+    std::vector<std::string> values;
+    std::stringstream stream(line);
+    std::string value;
 
-/*
-N_bins follows calculate_diagnostics.cc:
+    while (std::getline(stream, value, ','))
+    {
+        const std::size_t first = value.find_first_not_of(" \t\r\n");
+        const std::size_t last = value.find_last_not_of(" \t\r\n");
 
-    N_bins = N_trap + 5
+        if (first == std::string::npos)
+        {
+            values.emplace_back();
+        }
+        else
+        {
+            values.push_back(value.substr(first, last - first + 1));
+        }
+    }
 
-    estimate_load() is calculated once per physical epsilon bin.
-    The neutrino and antineutrino jobs for the same bin receive the
-    same estimated load, matching the existing diagnostics workflow.
-*/
-std::vector<Task> createCollisionIntegralTasks(
-    int number_of_trapezoid_bins,
-    double epsilon_maximum
+    return values;
+}
+
+std::vector<LoadValue> readLoadFactorsFromCsv(
+    const std::filesystem::path& csv_filename,
+    int expected_bin_count
 )
 {
-    if (number_of_trapezoid_bins <= 0)
+    std::ifstream input(csv_filename);
+
+    if (!input)
     {
-        throw std::invalid_argument(
-            "N_trap must be greater than zero."
+        throw std::runtime_error(
+            "Could not open diagnostics CSV: " + csv_filename.string()
         );
     }
 
-    if (epsilon_maximum <= 0.0)
+    std::vector<std::string> nonempty_rows;
+    std::string line;
+
+    while (std::getline(input, line))
     {
-        throw std::invalid_argument(
-            "eps_max must be greater than zero."
+        if (line.find_first_not_of(" \t\r\n") != std::string::npos)
+        {
+            nonempty_rows.push_back(line);
+        }
+    }
+
+    if (nonempty_rows.size() < 4)
+    {
+        throw std::runtime_error(
+            "The diagnostics CSV must contain at least four nonempty rows: "
+            "R values, epsilon values, weights, and load factors."
         );
     }
 
-    std::cout
-        << "Creating epsilon grid and calculating load factors...\n";
+    const std::vector<std::string> fields = splitCsvRow(nonempty_rows[3]);
 
-    linspace_and_gl* epsilon_grid =
-        new linspace_and_gl(
-            0.0,
-            epsilon_maximum,
-            number_of_trapezoid_bins,
-            5
-        );
-
-    const int number_of_bins =
-        number_of_trapezoid_bins + 5;
-
-    std::vector<LoadValue> load_factors(
-        static_cast<std::size_t>(number_of_bins),
-        0
-    );
-
-    collision_integral** integrators =
-        new collision_integral*[
-            static_cast<std::size_t>(number_of_bins)
-        ];
-
-    for (
-        int bin = 0;
-        bin < number_of_bins;
-        ++bin
-    )
+    if (static_cast<int>(fields.size()) != expected_bin_count)
     {
-        integrators[bin] =
-            new nu_nu_collision(
-                bin,
-                epsilon_grid,
-                true
+        throw std::runtime_error(
+            "CSV row 4 contains " + std::to_string(fields.size())
+            + " load factors, but N_trap + 5 requires "
+            + std::to_string(expected_bin_count) + "."
+        );
+    }
+
+    std::vector<LoadValue> load_factors;
+    load_factors.reserve(fields.size());
+
+    for (std::size_t bin = 0; bin < fields.size(); ++bin)
+    {
+        if (fields[bin].empty())
+        {
+            throw std::runtime_error(
+                "Empty load factor in CSV row 4 at bin "
+                + std::to_string(bin) + "."
             );
-    }
+        }
 
-    for (
-        int bin = 0;
-        bin < number_of_bins;
-        ++bin
-    )
-    {
-        load_factors[
-            static_cast<std::size_t>(bin)
-        ] =
-            static_cast<LoadValue>(
-                integrators[bin]->estimate_load()
+        std::size_t characters_used = 0;
+        const double load = std::stod(fields[bin], &characters_used);
+
+        if (characters_used != fields[bin].size()
+            || !std::isfinite(load)
+            || load < 0.0)
+        {
+            throw std::runtime_error(
+                "Invalid load factor in CSV row 4 at bin "
+                + std::to_string(bin) + ": " + fields[bin]
             );
+        }
 
-        std::cout
-            << "\rCalculated load factor "
-            << bin + 1
-            << " of "
-            << number_of_bins
-            << std::flush;
+        if (load > static_cast<double>(std::numeric_limits<LoadValue>::max()))
+        {
+            throw std::runtime_error(
+                "Load factor is too large at bin " + std::to_string(bin) + "."
+            );
+        }
+
+        load_factors.push_back(static_cast<LoadValue>(std::llround(load)));
     }
 
-    std::cout << "\nLoad-factor calculation finished.\n";
+    return load_factors;
+}
 
-    for (
-        int bin = 0;
-        bin < number_of_bins;
-        ++bin
-    )
-    {
-        delete integrators[bin];
-    }
-
-    //delete[] integrators;
-    //delete epsilon_grid;
-    integrators = nullptr;
-    epsilon_grid = nullptr;
+std::vector<Task> createCollisionIntegralTasksFromCsv(
+    const std::filesystem::path& csv_filename,
+    int number_of_trapezoid_bins
+)
+{
+    const int number_of_bins = number_of_trapezoid_bins + 5;
+    const std::vector<LoadValue> load_factors =
+        readLoadFactorsFromCsv(csv_filename, number_of_bins);
 
     std::vector<Task> tasks;
+    tasks.reserve(static_cast<std::size_t>(2 * number_of_bins));
 
-    tasks.reserve(
-        static_cast<std::size_t>(
-            2 * number_of_bins
-        )
-    );
-
-    // Neutrino jobs:
-    //
-    //     0 through N_bins - 1
-    for (
-        int bin = 0;
-        bin < number_of_bins;
-        ++bin
-    )
+    // Neutrino jobs are 0 through N_bins - 1.
+    for (int bin = 0; bin < number_of_bins; ++bin)
     {
-        tasks.push_back({
-            bin,
-            bin,
-            load_factors[
-                static_cast<std::size_t>(bin)
-            ]
-        });
+        tasks.push_back({bin, bin, load_factors[static_cast<std::size_t>(bin)]});
     }
 
-    // Antineutrino jobs:
-    //
-    //     N_bins through 2*N_bins - 1
-    //
-    // Therefore:
-    //
-    //     job_id % N_bins
-    //
-    // recovers the physical bin, and:
-    //
-    //     job_id < N_bins
-    //
-    // is true only for neutrino jobs.
-    for (
-        int bin = 0;
-        bin < number_of_bins;
-        ++bin
-    )
+    // Antineutrino jobs are N_bins through 2*N_bins - 1.
+    for (int bin = 0; bin < number_of_bins; ++bin)
     {
         tasks.push_back({
             number_of_bins + bin,
             bin,
-            load_factors[
-                static_cast<std::size_t>(bin)
-            ]
+            load_factors[static_cast<std::size_t>(bin)]
         });
     }
 
     std::cout
-        << "Created "
-        << tasks.size()
-        << " collision-integral jobs from "
-        << number_of_bins
-        << " physical bins.\n\n";
+        << "Read " << number_of_bins << " load factors from CSV row 4.\n"
+        << "Created " << tasks.size() << " collision-integral jobs.\n\n";
 
     return tasks;
 }
-
 
 // OUTPUT-FOLDER HELPERS
 
@@ -1589,31 +1564,31 @@ void createHeaderFile(
 
 // MAIN
 
-
-int Main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     try
     {
         /* Required command:
         
-            headerCreation.exe N_cores N_trap eps_max
+            headerCreation.exe N_cores N_trap eps_max diagnostics_csv
         
         Example:
         
-            headerCreation.exe 128 201 20
+            headerCreation.exe 128 201 20 load_factors.csv
         */
        
-        if (argc != 4)
+        if (argc != 5)
         {
             std::cerr
                 << "Usage:\n"
                 << "    "
                 << argv[0]
-                << " N_cores N_trap eps_max\n\n"
+                << " N_cores N_trap eps_max diagnostics_csv\n\n"
                 << "Example:\n"
                 << "    "
                 << argv[0]
-                << " 128 201 20\n";
+                << " 128 201 20 "
+                << "./solvingProblems/WorkerHeaderCreation/load_factors.csv\n";
 
             return 1;
         }
@@ -1624,6 +1599,8 @@ int Main(int argc, char* argv[])
         const int number_of_trapezoid_bins = std::stoi(argv[2]);
 
         const double epsilon_maximum = std::stod(argv[3]);
+
+        const std::filesystem::path diagnostics_csv = argv[4];
 
         //const int number_of_cores = 128;
 
@@ -1655,19 +1632,21 @@ int Main(int argc, char* argv[])
 
         // OUTPUT SETTING
 
-        // Change this one path to choose where the generated
-        // header file will be written.
-        //
-        // Relative example:
-        //     "./generated_headers"
-        //
-        // Windows example:
-        //     "C:/Users/user/Desktop/workspace/generated_headers"
+        /* Change this one path to choose where the generated
+         header file will be written.
+        
+         Relative example:
+             "./generated_headers"
+        
+         Windows example:
+             "C:/Users/user/Desktop/workspace/generated_headers"
+         Put the generated header in a "headers" folder beside the
+         diagnostics CSV. This is independent of the terminal's current
+         working directory.
+        */
         const std::filesystem::path output_folder =
-            "../../WorkerHeaderCreation/headers";
-            //"./generated_headers";
-            //creating file to use as the outputfolder
-
+            "./solvingProblems/WorkerHeaderCreation/headers";
+//here is the outputfolder path
 
         std::cout
             << "Starting headerCreation.cc\n"
@@ -1680,16 +1659,21 @@ int Main(int argc, char* argv[])
             << "eps_max: "
             << epsilon_maximum
             << "\n"
+            << "Diagnostics CSV:\n"
+            << "    "
+            << diagnostics_csv.string()
+            << "\n"
             << "Output folder:\n"
             << "    "
             << output_folder.string()
             << "\n\n";
 
 
-        // This removes everything currently inside output_folder.
-        //
-        // COMMENT OUT THIS ONE LINE whenever the old files should
-        // remain in the folder.
+        /*
+         This removes everything currently inside output_folder.
+         COMMENT OUT THIS ONE LINE whenever the old files should
+         remain in the folder.
+        */
         clearOutputFolder(output_folder);
 
 
@@ -1699,9 +1683,9 @@ int Main(int argc, char* argv[])
 
 
         const std::vector<Task> tasks =
-            createCollisionIntegralTasks(
-                number_of_trapezoid_bins,
-                epsilon_maximum
+            createCollisionIntegralTasksFromCsv(
+                diagnostics_csv,
+                number_of_trapezoid_bins
             );
 
 
