@@ -26,10 +26,10 @@ thermopath="./code/thermodynamics.cc"
 #EPS_MAX="20"
 #N_CORES="128"
 
-collisionType="$1"
-N_TRAP="$2"
-EPS_MAX="$3"
-N_CORES="$4"
+collisionType="0"
+N_TRAP="$1"
+EPS_MAX="$2"
+N_CORES="$3"
 
 tempCSV="$csvname"
 #   this was here, incase i need to see what the printed csv file 
