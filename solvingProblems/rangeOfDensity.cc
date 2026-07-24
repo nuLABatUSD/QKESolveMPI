@@ -25,8 +25,13 @@ using namespace std;
         --exclude 6,8
 
     example:
-        rangeOfDensity.exe input.csv 4 10 --add 2,15 --delete 7 --output DensityRange.hh
-        rangeDensityCases.sh input.csv 6 15 --add 1,20 --delete 15
+        rangeDensityCases.sh input.csv 4 10 --add 2,15 --delete 7 --output DensityRange.hh
+        rangeDensityCases.sh input.csv 6 15 --add 1,20 --delete 15,13,11,9
+        rangeDensityCases.sh input.csv 6 15 --add 1,20,23,25,26
+        rangeDensityCases.sh input.csv 6 15
+        
+        must run it with the shell script file (rangeDensityCases). 
+        otherwise the inputs will not work 
 
     line numbers are 1-based:
         line 1 = first non-empty CSV row
