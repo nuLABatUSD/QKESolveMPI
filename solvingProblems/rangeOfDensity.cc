@@ -22,7 +22,7 @@ using namespace std;
     optional arguments:
         --output filename.hh
         --add 2,15,20
-        --exclude 6,8
+        --delete 6,8
 
     example:
         rangeDensityCases.sh input.csv 4 10 --add 2,15 --delete 7 --output DensityRange.hh
