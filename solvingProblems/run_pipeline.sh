@@ -1,4 +1,4 @@
-#!/bin/sh
+#C:/msys64/usr/bin/bash.exe
 
 set -e
 pathing="./solvingProblems/"
@@ -9,15 +9,18 @@ pathing="./solvingProblems/"
 #   comparing things properly
 
 #SLURM_OUTPUT="slurm-18475761.txt"
-read -p "enter SLURM_OUTPUT file name: " SLURM_OUTPUT
+SLURM_OUTPUT="$1"
+#read -p "enter SLURM_OUTPUT file name: " SLURM_OUTPUT
 #just the output of all the error cases
 
 #ORIGINAL_DATASET="65-fix_10_small.csv"
-read -p "enter ORIGINAL_DATASET file name: " ORIGINAL_DATASET
+ORIGINAL_DATASET="$2"
+#read -p "enter ORIGINAL_DATASET file name: " ORIGINAL_DATASET
 #this is for the data set with all the density values
 
-#MODIFYING_VALUES="06-nu_e_coll-eps.csv"
-read -p "enter MODIFYING_VALUES file name: " MODIFYING_VALUES
+MODIFYING_VALUES="06-nu_e_coll-eps.csv"
+MODIFYING_VALUES="$3"
+#read -p "enter MODIFYING_VALUES file name: " MODIFYING_VALUES
 #this is for the epsilon and weights csv file
 
 # Output files created by programs
@@ -89,4 +92,3 @@ echo "Done."
 
 echo "deleting $EPSILON_WEIGHTS ..."
 rm -f "${pathing}$EPSILON_WEIGHTS"
-

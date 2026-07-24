@@ -52,10 +52,12 @@ int main(int argc, char* argv[])
     string dataset = argv[1];
     string eps = argv[2];
 
-    string file1 = "./solvingProblems/" + eps;
+    //string file1 = "./solvingProblems/" + eps;
+    string file1 = eps;
     //location of the epsilon and weight values are
 
-    string file2 = "./solvingProblems/" + dataset;
+    //string file2 = "./solvingProblems/" + dataset;
+    string file2 = dataset;
     //location of the datasheet is 
 
     regex indexPattern(R"(index\s*=\s*([0-9]+))");

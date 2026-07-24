@@ -162,8 +162,8 @@ int main(int argc, char* argv[])
     }
     string RK = argv[1];
 
-    string inputFile =
-        "./solvingProblems/" + RK;
+    //string inputFile = "./solvingProblems/" + RK;
+    string inputFile = RK;
 
     string outputDirectory =
     "./GeneratedFiles/";

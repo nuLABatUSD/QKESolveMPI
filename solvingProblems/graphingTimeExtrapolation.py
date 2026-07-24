@@ -333,9 +333,11 @@ def processes(extrapolation, original):
 RKextrap = sys.argv[1]
 RKoriginal = sys.argv[2]
 output_folder = "graphs_find_errors"
-data_file = "../" + RKextrap
+#data_file = "../" + RKextrap
+data_file = RKextrap
 #data file that contains all the results of a extrapiolation test
-data_file_2= "../" + RKoriginal
+#data_file_2= "../" + RKoriginal
+data_file_2 = RKoriginal
 #data file that contains all the results of the original test
 output_folder = "./solvingProblems/graphs_find_errors"
 #just the folder where the graphs go
@@ -411,7 +413,7 @@ print(len(Pz2[0]))
 #print(P02)
 '''
 #keep these debugging statements in case you need it
- 
+
 print("printing graphs, this may take a bit ...")
 debug_all_line(eps, eps2, P0, P02, "P0")
 debug_all_line(eps, eps2, Px, Px2, "Px")

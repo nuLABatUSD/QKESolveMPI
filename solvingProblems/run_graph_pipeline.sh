@@ -1,3 +1,4 @@
+#C:/msys64/usr/bin/bash.exe
 #!/bin/sh
 
 #. ./script/test_RK_interpolation.sh
@@ -8,25 +9,28 @@
 # Change these paths
 # =========================
 
-#RK_OUTPUT="RKoutput (1).csv"
-read -p "enter RKoutput file name: " RK_OUTPUT
+#RK_OUTPUT="RKoutput (2).csv"
+RK_OUTPUT="$1"
+#read -p "enter RKoutput file name: " RK_OUTPUT
 #this file must be inside the folder solvingProblems
 
 
 #EPSILON_WEIGHTS="06-nu_e_coll-eps.csv"
-read -p "enter EPSILON_WEIGHTS file name: " EPSILON_WEIGHTS
+EPSILON_WEIGHTS="$2"
+#read -p "enter EPSILON_WEIGHTS file name: " EPSILON_WEIGHTS
 #this file must be inside the folder solvingProblems
-
 
 #EXTRAP_HEADER="test_extrapolation.hh"
 
 #RK_EXTRAP_ORIGINAL="RKextrap_original.csv"
-read -p "enter RK_EXTRAP_ORIGINAL file name: " RK_EXTRAP_ORIGINAL
+RK_EXTRAP_ORIGINAL="$3"
+#read -p "enter RK_EXTRAP_ORIGINAL file name: " RK_EXTRAP_ORIGINAL
 #currently located in the local directory
 #aka inside the QKEsolveMPI-Main folder 
 
 #RK_EXTRAP="RKextrap.csv"
-read -p "enter RK_EXTRAP file name: " RK_EXTRAP
+RK_EXTRAP="$4"
+#read -p "enter RK_EXTRAP file name: " RK_EXTRAP
 #currently located in the local directory
 #aka inside the QKEsolveMPI-Main folder 
 
@@ -36,7 +40,12 @@ read -p "enter RK_EXTRAP file name: " RK_EXTRAP
 # =========================
 
 echo "Compiling extrapolationCreation..."
+#g++ -Wall -Wextra -g3 extrapolationCreation.cpp -o extrapolationCreation.exe
 g++ ./solvingProblems/extrapolationCreation.cpp -std=c++17 -o extrapolationCreation.cpp
+
+# If test_RK_interpolation.sh already compiles run_RK_interp.cc,
+# you do not need this line.
+# g++ -Wall -Wextra -g3 run_RK_interp.cc -o run_RK_interp.exe
 
 
 # =========================

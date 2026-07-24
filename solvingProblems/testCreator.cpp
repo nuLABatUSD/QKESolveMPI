@@ -619,7 +619,8 @@ int main(int argc, char* argv[])
     vector<string> problemFiles =
     {
         
-        "./solvingProblems/" + slurm
+        //"./solvingProblems/" + slurm
+        slurm
         //wanted to make this into an array of locations that you can find the issues from.
         //technically you can, but doesnt want to work with shell script. 
         //so reduced it to 1 file
@@ -628,10 +629,12 @@ int main(int argc, char* argv[])
     //locations for the error case files
     //should be able to go through all the files just fine
 
-    string dataSheetFile = "./solvingProblems/" + originalSet;
+    //string dataSheetFile = "./solvingProblems/" + originalSet;
+    string dataSheetFile = originalSet;
     //data sheet file path location
 
-    string condensedData = "./solvingProblems/" + dataset_info;
+    //string condensedData = "./solvingProblems/" + dataset_info;
+    string condensedData = dataset_info;
     //condensed data sheet
     
     vector<CaseData> cases;

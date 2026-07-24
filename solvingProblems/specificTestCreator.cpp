@@ -288,8 +288,8 @@ int main(int argc, char* argv[])
     string ultimate = argv[1];
     int mode = stoi(argv[2]);
 
-    string inputFile =
-        "./solvingProblems/" + ultimate;
+    //string inputFile = "./solvingProblems/" + ultimate;
+    string inputFile = ultimate;
 
     string outputFile = "MaximumGenericName.hh";
 

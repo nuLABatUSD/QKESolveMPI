@@ -317,8 +317,11 @@ int main(int argc, char* argv[])
 
     //slurm-18329938-Copy   output data 1
     //slurm-18475761        output data 2
-    string fileAName = "./solvingProblems/" + slurm;
-    string fileBName = "./solvingProblems/" + dataset_info;
+    //string fileAName = "./solvingProblems/" + slurm;
+    string fileAName = slurm;
+    
+    //string fileBName = "./solvingProblems/" + dataset_info;
+    string fileBName = dataset_info;
 
     ifstream fileA(fileAName);
     ofstream out("errorFound.txt");
@@ -347,7 +350,7 @@ int main(int argc, char* argv[])
     }
 
     const int targetIndex = 818;
-   /*
+    /*
     =====================================================================================
     important variable above
     =====================================================================================

@@ -3,12 +3,8 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-#sys.path.insert(0, "C:\\Users\\astar\\Desktop\\workspace\\QKESolveMPI-main\\analysis")
 sys.path.insert(0, "../analysis")
 sys.path.append("../analysis")
-#sys.path.insert(0, "C:/Users/astar/Desktop/workspace/QKESolveMPI-main/analysis")
-#sys.path.append("C:/Users/astar/Desktop/workspace/QKESolveMPI-main/analysis")
-#import process_data
 
 import os
 import shutil
@@ -38,6 +34,7 @@ def plot_six_lines(eps, data, default_row, row_indices, title, filename, ylabel)
 
     for ax, row_index in zip(axes, row_indices):
         # modified case
+        print(str(row_index) + "\n")
         ax.semilogy(eps, data[row_index, :], label=f"modified row {row_index} positive")
         ax.semilogy(eps, -data[row_index, :], label=f"modified row {row_index} negative")
 
@@ -59,15 +56,19 @@ def plot_six_lines(eps, data, default_row, row_indices, title, filename, ylabel)
 #this code above, is mostly just used for plotting all different 6 cases in the test file
 
 def plot_all_datasets(eps, data, data_name):
-    rows_per_dataset = 13
+    rows_per_dataset = 8
+    #this may change depending on the amount of step size
     number_of_datasets = 5
 
     for dataset_index in range(number_of_datasets):
-        start = dataset_index * rows_per_dataset
+        start = 1 + dataset_index * rows_per_dataset
 
         default_row = start
-        modified_group_1 = range(start + 1, start + 7)
-        modified_group_2 = range(start + 7, start + 13)
+        modified_group_1 = range(start+1, start + 6)
+        modified_group_2 = range(start+1, start + 6)
+        #modified_group_2 = range(start + 7, start + 13)
+        #may need to change the step group2 command here, depending on if we have 
+        #   more than 1 step size
 
         dataset_number = dataset_index + 1
 
@@ -89,7 +90,7 @@ def plot_all_datasets(eps, data, data_name):
             f"dataset_{dataset_number}_modified_group_1_{data_name}.png",
             data_name
         )
-
+        '''
         plot_six_lines(
             eps,
             data,
@@ -99,6 +100,7 @@ def plot_all_datasets(eps, data, data_name):
             f"dataset_{dataset_number}_modified_group_2_{data_name}.png",
             data_name
         )
+        '''
 #this code above plots all of the graphs so it can be shown
 def make_data_dictionary(data_file, eps_file):
     results = dict()
@@ -142,10 +144,12 @@ epsvalues = sys.argv[2]
 
 output_folder = "graphs_output"
 
-data_file = "./solvingProblems/" + RK
+#data_file = "./solvingProblems/" + RK
+data_file = RK
 #data file that contains all the results of a test
 
-epsilon_raw_values = "./solvingProblems/" + epsvalues
+#epsilon_raw_values = "./solvingProblems/" + epsvalues
+epsilon_raw_values = epsvalues
 #the raw epsilon values from a data file
 
 output_folder = "./solvingProblems/graphs_output"
@@ -175,6 +179,18 @@ ar = [0, 1, 2, 3, 4, 5, 6]
 binnumber = 1
 
 eps = eps_data[0]
+
+#print(data)
+print(eps)
+print(len(eps))
+print(len(P0[0]))
+print(len(Px[0]))
+print(len(Py[0]))
+print(len(Pz[0]))
+#   debugging statements to ensure 
+#   everything is correct
+
+#print(P02)
 
 print("creating graphs, this may take a bit...")
 plot_all_datasets(eps, P0, "P0")
