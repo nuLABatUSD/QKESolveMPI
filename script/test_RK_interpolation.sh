@@ -34,7 +34,7 @@ if [ -f "${output_file}.csv" ]; then
     mv ${output_file}.csv ${output_file}-old.csv
 fi
 
-./$program_name ${output_file}.csv ${output_file}_original.csv
+./$program_name ${output_file}.csv ${output_file}-eps.csv ${output_file}_original.csv ${output_file}_original-eps.csv
 echo "Output printed to ${output_file}.csv and ${output_file}_original.csv"
 
 rm $program_name
