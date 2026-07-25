@@ -521,7 +521,7 @@ double density::interpolated_matrix(bool neutrino, int index, double p4_energy, 
 
 }
 
-double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double P01, double y1, double P02, double y2)
+double interp_extrap_P0Pxy(double x, double P0_new, double x1, double x2, double P01, double y1, double P02, double y2, bool extrapolate)
 {
     const bool use_log =
         (y1 > 0.0 && y2 > 0.0 && y2 < y1) ||
