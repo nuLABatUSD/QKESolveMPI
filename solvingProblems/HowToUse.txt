@@ -4,6 +4,25 @@ how to use solving problems folder:
 one thing to note before learning how this folder works. 
   1st, some pathways may need to change depending on where you are accessing it from. should be an easy fix.
   2nd, this folder will create about 100 graphs, split amongst the folders graph_find_errors & graphs_output. not recommended to run on an old computer
+  3rd, there are 4 output folders. workerFolder, workload_comparison, graphs_output, graphs_find_errors. they all output different things.
+
+output section:
+  the 4 folders workerFolder, workload_comparison, graphs_output, graphs_find_errors; are meant to
+store a few things. workerfolder, outputs the data of the workload compared to the epsilon along
+with making an csv file that is more easily readable to humans. 
+
+  workload_comparison is an output folder that will show all of the programmed sorting methods in
+terms of the efficiency of the sorting method, the best possible combination using that specific
+sorting method, the maximum and minimum workload for each method, and the comparison of each method
+to each other, the best possible distribution of the workload using the method, and how efficient
+each method is using the number of cores
+
+graph_output, outputs graphs with perspective of the interpretation. there should be a bunch of graphs
+
+graph_find_errors, is the output file that outputs all the graphs corresponding to the extrapolation stuff. 
+
+both of the graphing code may break, depending on the steps used. i need to make it dynamic. 
+
 
 there should realistically be 3 files that need to be ran.
   - run_pipline.sh
