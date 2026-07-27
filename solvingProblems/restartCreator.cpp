@@ -163,8 +163,9 @@ int main(int argc, char* argv[])
     //RKoutput (2).csv
     string csvName = argv[1];
 
-    string csvFile =
-        "./" + csvName;
+    //string csvFile = "./" + csvName;
+    string csvFile = csvName;
+
 
     string headerFile =
         "./solvingProblems/restart.hh";
