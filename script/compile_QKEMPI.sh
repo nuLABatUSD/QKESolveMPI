@@ -1,7 +1,36 @@
 #!/usr/bin/bash
+
+err1="usage: bash compile_QKEMPI.sh output_filename <opt: time>"
+err2="usage: bash compile_QKEMPI.sh --continued continue_file N_steps dN <opt: time, default 12>"
+if [ $# -eq 0 ]; then
+    echo $err1
+    echo $err2
+    exit 1
+fi
+
+if [[ $1 == "--continued" ]]; then
+    if [ $# -eq 4 ]; then
+        args="$2 $3 $4"
+    elif [ $# -eq 5 ]; then
+        args="$2 $3 $4 $5"
+    else
+        echo $err2
+        exit 1
+    fi
+    bash script/QKEMPI_compile_continued.sh $args
+    exit 0
+fi
+
+if [[ $1 == -* ]]; then
+    echo $err1
+    echo $err2
+    exit 1
+fi
+    
+
 if [ $# -ne 1 ]; then
     if [ $# -ne 2 ]; then
-        echo "usage: bash compile_QKEMPI.sh output_filename <opt: time>"
+        echo $err1
         exit 1
     fi
 fi

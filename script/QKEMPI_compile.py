@@ -3,8 +3,9 @@ import sys
 
 prev_res = []
 for f in os.listdir("results/"):
-    if f[:2].isnumeric():
-        prev_res.append(int(f[:2]))
+    poss = f.split('-')[0]
+    if poss.isnumeric():
+        prev_res.append(int(poss))
 
 if len(prev_res) == 0:
     next = 1
