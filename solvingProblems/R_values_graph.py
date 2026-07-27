@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 # ============================================================
 
 filename = "R_values-201-20-5.csv"
-input_file = "./solvingProblems/" + filename
+#input_file = "./solvingProblems/" + filename
+input_file = filename
+
 
 output_folder = "./solvingProblems/workerFolder"
 output_filename = "current_worker_loads.png"
