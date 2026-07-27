@@ -11,7 +11,8 @@ filename = "R_values-201-20-5.csv"
 #output_folder = "./solvingProblems/workerFolder"
 
 
-INPUT_FILE = "./solvingProblems/" + filename
+#INPUT_FILE = "./solvingProblems/" + filename
+INPUT_FILE = filename
 OUTPUT_FOLDER = "./solvingProblems/workload_comparison"
 
 NUMBER_OF_WORKERS = 127
