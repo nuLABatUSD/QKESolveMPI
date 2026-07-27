@@ -137,8 +137,10 @@ def num_density(data):
 
     return n * data['Tcm']**3
 
-def run_coherentsolve(outfile_name, Tcm=32, dm2=1.e-18, ke=0.9, km=1.8, kebar=0.9, kmbar=1.8):
-    res = subprocess.run("cd .. && bash script/run_coherent.sh {} {} {} {} {} {} analysis/{}".format(Tcm, ke, km, kebar, kmbar, dm2, outfile_name), shell=True, capture_output=True)
+def run_coherentsolve(outfile_name, Tcm=32, dm2=1.e-18, ke=0.9, km=1.8, kebar=0.9, kmbar=1.8, sin2theta=0.8, print_result=False):
+    res = subprocess.run("cd .. && bash script/run_coherent.sh {} {} {} {} {} {} {} analysis/{}".format(Tcm, ke, km, kebar, kmbar, dm2, sin2theta, outfile_name), shell=True, capture_output=True)
+    if print_result:
+        print(res)
 
 def find_coherent_frequency_MHz(Tcm=32, dm2=1.e-18, ke=0.9, km=1.8, kebar=0.9, kmbar=1.8):
     run_coherentsolve("asym", Tcm, dm2, ke, km, kebar, kmbar)
