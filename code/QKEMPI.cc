@@ -15,6 +15,18 @@
 #define ODE_SOLVER_SAFETY 0.9
 #endif
 
+#ifndef COHERENT_SOLVER_TOLERANCE
+#define COHERENT_SOLVER_TOLERANCE ODE_SOLVER_TOLERANCE
+#endif
+
+#ifndef COHERENT_SOLVER_TINY
+#define COHERENT_SOLVER_TINY ODE_SOLVER_TINY
+#endif
+
+#ifndef COHERENT_SOLVER_SAFETY
+#define COHERENT_SOLVER_SAFETY ODE_SOLVER_SAFETY
+#endif
+
 QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, double dx0, linspace_and_gl* e, density* ic) {
     myid = rank;
     numprocs = numranks;
@@ -41,6 +53,10 @@ QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, 
     tol = ODE_SOLVER_TOLERANCE;
     TINY = ODE_SOLVER_TINY;
     Safety = ODE_SOLVER_SAFETY;
+
+    just_h->set_tolerance(COHERENT_SOLVER_TOLERANCE);
+    just_h->set_tiny(COHERENT_SOLVER_TINY);
+    just_h->set_safety(COHERENT_SOLVER_SAFETY);
     
     total_ODE_steps = 0;
     total_ODE_rejected_steps = 0;
@@ -478,16 +494,17 @@ void QKEMPI::print_test_steps(ostream& os, int max_steps){
         for(int j = 0; j < 10; j++){
             RKCash_Karp(x, y, dx_try, &x_next, y5, y4);
             if(myid == 0){
+                os << j << ", " << dx_try << ", ";
                 k1->print_csv(os);
-                os << endl;
+                os << endl << "2, " << dx_try << ", ";
                 k2->print_csv(os);
-                os << endl;
+                os << endl << "3, " << dx_try << ", ";
                 k3->print_csv(os);
-                os << endl;
+                os << endl << "4, " << dx_try << ", ";
                 k4->print_csv(os);
-                os << endl;
+                os << endl << "5, " << dx_try << ", ";
                 k5->print_csv(os);
-                os << endl;
+                os << endl << "6, " << dx_try << ", ";
                 k6->print_csv(os);
                 os << endl;
             }
@@ -502,4 +519,22 @@ void QKEMPI::print_test_steps(ostream& os, int max_steps){
             }
         }        
     }
+
+    delete y;
+    delete y5;
+    delete y4;
 }
+
+void QKEMPI::set_density_object_for_test(double* density_test_array){
+    for(int i = 0; i < y_values->get_length(); i++)
+        y_values->set_value(i, density_test_array[i]);
+}
+
+void QKEMPI::set_xvalue(double x){
+    x_value = x;
+}
+
+void QKEMPI::set_dxvalue(double dx){
+    dx_value = dx;
+}
+

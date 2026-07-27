@@ -16,7 +16,13 @@ fi
 
 . ./script/script_vars.sh 
 
-rm coh
+if [ -f "coh" ]; then
+    rm coh
+fi
+
+if [ ! -f "run_params.hh" ]; then
+    echo "" >> run_params.hh
+fi
 
 g++ ${run_code_folder}/coherentsolve.cc ${coherent_code} -o coh
 

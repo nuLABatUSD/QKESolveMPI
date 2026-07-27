@@ -12,10 +12,11 @@ int main(int argc, char* argv[]){
 
     int ls_bins = atoi(argv[2]);
     double eps_max = atof(argv[3]);
+    int NGL = atoi(argv[4]);
     
-    linspace_and_gl* eps = new linspace_and_gl(0., eps_max, ls_bins, 5);
+    linspace_and_gl* eps = new linspace_and_gl(0., eps_max, ls_bins, NGL);
 
-    int N_bins = ls_bins + 5;
+    int N_bins = ls_bins + NGL;
     
     density* ics = new density(eps, IC_TCM, IC_NU_E, IC_NU_MU, IC_NUBAR_E, IC_NUBAR_MU, IC_MAX_DISTFUN);
     ics->set_T_Tcm(IC_TEMP, IC_TCM);
@@ -60,7 +61,7 @@ int main(int argc, char* argv[]){
     cout << "dn/dt sum rule = " << eps->integrate(dndt) / eps->integrate(dndt_FRS) << endl;
     cout << "drho/dt sum rule = " << eps->integrate(drhodt) / eps->integrate(drhodt_FRS) << endl;
     ofstream file;
-    file.open(argv[4]);
+    file.open(argv[5]);
 
     R->print_csv(file);
     file << endl;

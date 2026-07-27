@@ -14,3 +14,5 @@ results
 *.out
 slurm*
 execute*
+test_cases*
+run_params*
