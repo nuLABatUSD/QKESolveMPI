@@ -137,6 +137,57 @@ def num_density(data):
 
     return n * data['Tcm']**3
 
+def combine_dictionary(d1, d2):
+    d = dict()
+    if d1['time'][-1] != d2['time'][0]:
+        print("Time doesn't match up: {}, {}.".format(d1['time'][-1], d2['time'][0]))
+        return None
+    else:
+        d['time'] = np.append(d1['time'], d2['time'][1:])
+
+    if d1['N_bins'] != d2['N_bins']:
+        print("N_bins doesn't match up: {}, {}".format(d1['N_bins'], d2['N_bins']))
+        return None
+    else:
+        d['N_bins'] = d1['N_bins']
+
+    if np.array_equal(d1['rho'][-1,:], d2['rho'][0,:]):
+        d['rho'] = np.append(d1['rho'], d2['rho'][1:,:], axis=0)
+    else:
+        print("rho doesn't match up")
+        return None
+
+    if np.array_equal(d1['rhobar'][-1,:], d2['rhobar'][0,:]):
+        d['rhobar'] = np.append(d1['rhobar'], d2['rhobar'][1:,:], axis=0)
+    else:
+        print("rhobar doesn't match up")
+        return None
+
+    d['f'] = []
+    d['dnde'] = []
+    for i in range(4):
+        if np.array_equal(d1['f'][i][-1,:], d2['f'][i][0,:]):
+            d['f'].append(np.append(d1['f'][i], d2['f'][i][1:,:], axis=0))
+            d['dnde'].append(np.append(d1['dnde'][i], d2['dnde'][i][1:,:], axis=0))
+        else:
+            print("f[{}] does not match up".format(i))
+            return None
+
+    if d1['Tcm'] == d2['Tcm']:
+        d['Tcm'] = d1['Tcm']
+    else:
+        print("Tcm doesn't match up: {}, {}".format(d1['Tcm'], d2['Tcm']))
+        return None
+
+    if np.array_equal(d1['eps'], d2['eps']):
+        d['eps'] = d1['eps']
+        d['w'] = d1['w']
+    else:
+        print("eps doesn't match up")
+        return None
+
+    return d
+
 def run_coherentsolve(outfile_name, Tcm=32, dm2=1.e-18, ke=0.9, km=1.8, kebar=0.9, kmbar=1.8, sin2theta=0.8, print_result=False):
     res = subprocess.run("cd .. && bash script/run_coherent.sh {} {} {} {} {} {} {} analysis/{}".format(Tcm, ke, km, kebar, kmbar, dm2, sin2theta, outfile_name), shell=True, capture_output=True)
     if print_result:
