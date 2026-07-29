@@ -2,6 +2,8 @@
 
 #include "mpi.h"
 
+#include <stdexcept>
+
 collisions::collisions(int rank, int num_ranks, linspace_and_gl* e, bool nu_nu, bool nu_e, bool nu_e_ann){
     myid = rank;
     numprocs = num_ranks;
@@ -250,3 +252,124 @@ void collisions::set_min_rate(density* ic){
             integrators[j]->set_min_rate(ic);
     }
 }
+
+
+//=========================================================================================
+//my additional code:
+//    (has not been properly tested, just put it here incase i am not able to finish it)
+
+collisions::collisions(
+    int rank,
+    int num_ranks,
+    linspace_and_gl* e,
+    int** core_jobs,
+    int max_jobs
+){
+    myid = rank;
+    numprocs = num_ranks;
+
+    eps = new linspace_and_gl(e);
+    N_bins = eps->get_length();
+
+    num_integrators = 0;
+    load_value = 0;
+    total_integrators = 0;
+
+    if(numprocs < 2){
+        throw std::invalid_argument(
+            "collisions requires at least two MPI ranks."
+        );
+    }
+
+    if(core_jobs == nullptr){
+        throw std::invalid_argument(
+            "core_jobs cannot be null."
+        );
+    }
+
+    if(max_jobs < 0){
+        throw std::invalid_argument(
+            "max_jobs cannot be negative."
+        );
+    }
+
+    worker_values = new int*[numprocs];
+    worker_result_indexes = new int*[numprocs];
+
+    for(int worker = 0; worker < numprocs; worker++){
+        worker_values[worker] = new int[2];
+        worker_values[worker][0] = 0;
+        worker_values[worker][1] = 0;
+        worker_result_indexes[worker] = nullptr;
+
+        for(int slot = 0; slot < max_jobs; slot++){
+            const int job = core_jobs[worker][slot];
+
+            if(job >= 0){
+                if(job >= 2 * N_bins){
+                    throw std::out_of_range(
+                        "core_jobs contains a job index outside [0, 2*N_bins)."
+                    );
+                }
+
+                worker_values[worker][0]++;
+            }
+        }
+
+        total_integrators += worker_values[worker][0];
+
+        if(worker_values[worker][0] > 0){
+            worker_result_indexes[worker] =
+                new int[worker_values[worker][0]];
+
+            int destination = 0;
+
+            for(int slot = 0; slot < max_jobs; slot++){
+                const int job = core_jobs[worker][slot];
+
+                if(job >= 0){
+                    worker_result_indexes[worker][destination] = job;
+                    destination++;
+                }
+            }
+        }
+    }
+
+    // Rank 0 is the coordinator and must not calculate collision integrals.
+    if(worker_values[0][0] != 0){
+        throw std::invalid_argument(
+            "core_jobs row 0 must contain only -1 values."
+        );
+    }
+
+    // max_jobs is the padded width of core_jobs and therefore the largest
+    // possible number of jobs assigned to any worker.
+    max_worker_bins = max_jobs;
+
+    /*
+     This optimized constructor is specifically for nu-nu collision jobs.
+     Each job index identifies both the epsilon bin and whether the job is
+     neutrino or antineutrino:
+         job % N_bins -> physical epsilon bin
+         job < N_bins -> neutrino
+    */
+    if(myid != 0){
+        num_integrators = worker_values[myid][0];
+        integrators = new collision_integral*[num_integrators];
+
+        for(int local_job = 0; local_job < num_integrators; local_job++){
+            const int job = worker_result_indexes[myid][local_job];
+            const int epsilon_bin = job % N_bins;
+            const bool is_neutrino = job < N_bins;
+
+            integrators[local_job] = new nu_nu_collision(
+                epsilon_bin,
+                eps,
+                is_neutrino
+            );
+
+            load_value += integrators[local_job]->estimate_load();
+        }
+    }
+}
+
