@@ -4,7 +4,7 @@
 #include <mpi.h>
 
 
-#include "../solvingProblems/WorkerHeaderCreation/headers/collision_distribution_128_cores_201_trap.hh"
+#include "../solvingProblems/generalDistribution.hh"
 
 
 #include <algorithm>
