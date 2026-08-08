@@ -76,7 +76,7 @@ def V_mat(data):
         res[1,i] = np.sum(w * yy)
         res[0,i] = np.sum(w * xx)
 
-    return np.sqrt(2) * GF * data['Tcm']**3 * res
+    return np.sqrt(2) * GF * data['Tcm']**3 * res / (2 * np.pi**2)
     
 def s_classical(data, time_index):
     eps = data['eps']
