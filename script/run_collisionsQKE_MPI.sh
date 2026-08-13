@@ -1,109 +1,50 @@
 #!/usr/bin/bash
-#C:/msys64/usr/bin/bash.exe
-
-
-
-
-#!/usr/bin/bash
-
 
 if [ $# -ne 2 ]; then
-    echo "usage: bash run_collisionsQKE_MPI.sh N_cores distribution_file"
+    echo "usage: bash run_collisionsQKE_MPI.sh N_cores"
     echo "example:"
-    echo "    bash run_collisionsQKE_MPI.sh 12 ../file.hh"
+    echo "    bash run_collisionsQKE_MPI.sh 12"
     exit 1
 fi
 
-
 N_CORES="$1"
-INPUT_DISTRIBUTION="$2"
-
-
-DESTINATION="../solvingProblems/generalDistribution.hh"
-
+MODE="$2"
 
 . ../script/script_vars.sh
 
 
+#echo
+#echo "Select collision test:"
+#echo "    0 = original collision constructor"
+#echo "    1 = optimized collision constructor"
+#echo "    2 = run both and compare"
+#echo
 
 
-# Make sure the input file exists.
-if [ ! -f "$INPUT_DISTRIBUTION" ]; then
-    echo "Error: distribution file does not exist:"
-    echo "    $INPUT_DISTRIBUTION"
-    exit 1
-fi
+#read -p "Enter mode [0/1/2]: " MODE
 
+#case "$MODE" in
+#    0|1|2)
+#        ;;
+#    *)
+#        echo "Error: mode must be 0, 1, or 2."
+#        exit 1
+#        ;;
+#esac
 
-# Make sure the destination directory exists.
-mkdir -p "../solvingProblems"
+#this is here incase we need to select 
 
+#MODE="1"
 
-# Copy the selected distribution and rename it.
-cp "$INPUT_DISTRIBUTION" "$DESTINATION"
-
-
-if [ $? -ne 0 ]; then
-    echo "Error: failed to copy distribution file."
-    exit 1
-fi
-
-
-echo "Using distribution:"
-echo "    $INPUT_DISTRIBUTION"
-echo "Copied to:"
-echo "    $DESTINATION"
-
-
-# Remove the previous executable if it exists.
 rm -f coll
 
-
-# Compile.
 mpic++ \
-    ${run_code_folder}/run_collisionsQKE_MPI.cc \
-    ${QKE_code} \
-    ${MPI_code} \
-    -std=c++11 \
-    -o coll
-
+    ${run_code_folder}/SIMPLIFIED_run_collisionsQKE_MPI.cc ${QKE_code} ${MPI_code} \
+    -std=c++17 -o coll
 
 if [ $? -ne 0 ]; then
     echo "Compilation failed."
     exit 1
 fi
 
-
-# Run.
-mpiexec -n "$N_CORES" ./coll
-
-
-
-
-#to run a file on the terminal we can do something like:
-#    C:/msys64/usr/bin/bash.exe "c:\Users\ckishimoto\Desktop\QKESolveMPI-extrap\QKESolveMPI-extrap\script\run_collisionsQKE_MPI.sh"
-#   this will run the code using bash from mingw and run the directory to the file
-#   the PC we are using, or at least this one, has 16 cores
-#   simulating the real thing, lets assume 15 cores is what we are dealing with
-
-
-
-
-# C:/msys64/usr/bin/bash.exe "c:\Users\ckishimoto\Desktop\QKESolveMPI-extrap\QKESolveMPI-extrap\script\run_collisionsQKE_MPI.sh"  15
-# currently vs code isnt reading the mpi exe and exec file correctly
-
-
-
-
-# this works on command prompt:
-#   bash ./run_collisionsQKE_MPI.sh 15
-
-
-#use for linux:
-#   bash run_collisionsQKE_MPI.sh 15
-
-
-
-
-
-
+mpiexec -n "$N_CORES" ./coll "$MODE"
