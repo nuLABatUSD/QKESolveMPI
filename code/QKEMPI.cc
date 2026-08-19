@@ -27,7 +27,7 @@
 #define COHERENT_SOLVER_SAFETY ODE_SOLVER_SAFETY
 #endif
 
-QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, double dx0, linspace_and_gl* e, density* ic) {
+QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, double dx0, linspace_and_gl* e, density* ic, bool use_optimized_collisions, int** core_jobs, const int max_jobs) {
     myid = rank;
     numprocs = numranks;
 
@@ -42,12 +42,46 @@ QKEMPI::QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, 
     y_values = new density(ic);
     
     just_h = new QKE(e, sin_2theta, delta_m_squared, y_values);
-    
-    nu_nu_coll = NU_NU_COLLISIONS;
-    nu_e_coll = NU_E_COLLISIONS;
-    nu_e_ann = NU_E_ANNIHILATION;
-    
-    coll_integrator = new collisions(myid, numprocs, epsilon, NU_NU_COLLISIONS, NU_E_COLLISIONS, NU_E_ANNIHILATION);
+
+    /*
+        QKEMPI can now use either collision implementation.
+
+        use_optimized_collisions == false:
+            use the original three-boolean constructor.
+
+        use_optimized_collisions == true:
+            use the optimized core_jobs/max_jobs constructor.
+    */
+    if (use_optimized_collisions)
+    {
+        nu_nu_coll = true;
+        nu_e_coll = false;
+        nu_e_ann = false;
+
+        coll_integrator = new collisions(
+            myid,
+            numprocs,
+            epsilon,
+            core_jobs,
+            max_jobs
+        );
+    }
+    else
+    {
+        nu_nu_coll = NU_NU_COLLISIONS;
+        nu_e_coll = NU_E_COLLISIONS;
+        nu_e_ann = NU_E_ANNIHILATION;
+
+        coll_integrator = new collisions(
+            myid,
+            numprocs,
+            epsilon,
+            NU_NU_COLLISIONS,
+            NU_E_COLLISIONS,
+            NU_E_ANNIHILATION
+        );
+    }
+
     coll_integrator->set_min_rate(ic);
     
     tol = ODE_SOLVER_TOLERANCE;

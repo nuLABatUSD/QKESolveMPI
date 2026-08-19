@@ -54,6 +54,8 @@ class QKEMPI{
     public:
         // (int rank, int numranks, double sin2theta, double dm2, double x0, double dx0, linspace_and_gl* e, density* ic)
         QKEMPI(int, int, double, double, double, double, linspace_and_gl*, density*);
+        //QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, double dx0, linspace_and_gl* e, density* ic, int** core_jobs, const int max_jobs);
+        QKEMPI(int rank, int numranks, double sin2theta, double dm2, double x0, double dx0, linspace_and_gl* e, density* ic, bool use_optimized_collisions, int** core_jobs, const int max_jobs);
         ~QKEMPI();
         
         void print_state();
