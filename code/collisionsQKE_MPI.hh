@@ -18,6 +18,7 @@ class collisions{
         
     public:
         collisions(int, int, linspace_and_gl*, bool, bool, bool);
+        collisions(int, int, linspace_and_gl*, int**, int);
         ~collisions();
         
         int get_load_value();

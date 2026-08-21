@@ -66,20 +66,22 @@ namespace
 
     double run_compute_R(
         collisions* collision,
-        std::vector<double>& results)
+        std::vector<double>& results,
+        int repeat=1 )
     {
         MPI_Barrier(MPI_COMM_WORLD);
 
         const auto start =
             high_resolution_clock::now();
 
+        for(int i = 0; i < repeat; i++){
         collision->compute_R(
             32.0,
             32.0,
             results.data()
         );
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);}
 
         const auto stop =
             high_resolution_clock::now();
@@ -111,12 +113,18 @@ int main(int argc, char* argv[])
             2 = run both and compare
     */
     int mode = 0;
+    int rep = 1;
 
     if (argc >= 2)
     {
         mode = std::atoi(argv[1]);
     }
 
+    if (argc == 3){
+        rep = std::atoi(argv[2]);
+        if (rep < 1)
+            rep = 1;
+    }
     if (mode < 0 || mode > 2)
     {
         if (myid == 0)
@@ -356,17 +364,19 @@ int main(int argc, char* argv[])
             0.0
         );
 
-        const double original_time =
-            run_compute_R(
-                original_collision,
-                original_results
-            );
-
         const double optimized_time =
             run_compute_R(
                 optimized_collision,
-                optimized_results
+                optimized_results,
+                rep
             );
+        const double original_time =
+            run_compute_R(
+                original_collision,
+                original_results,
+                rep
+            );
+
 
         if (myid == 0)
         {

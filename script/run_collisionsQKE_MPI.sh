@@ -1,16 +1,25 @@
 #!/usr/bin/bash
 
 if [ $# -ne 2 ]; then
-    echo "usage: bash run_collisionsQKE_MPI.sh N_cores"
-    echo "example:"
-    echo "    bash run_collisionsQKE_MPI.sh 12"
-    exit 1
+    if [ $# -ne 3]; then
+        echo "usage: bash run_collisionsQKE_MPI.sh N_cores <repeat default=1>"
+        echo "example:"
+        echo "    bash run_collisionsQKE_MPI.sh 12 2"
+        exit 1
+    fi
+fi
+
+if [ $# -eq 2 ]; then
+    m="$1 ./coll"
+fi
+if [ $# -eq 3 ]; then
+    m="$1 ./coll $2"
 fi
 
 N_CORES="$1"
 MODE="$2"
 
-. ../script/script_vars.sh
+. ./script/script_vars.sh
 
 
 #echo
@@ -39,7 +48,7 @@ MODE="$2"
 rm -f coll
 
 mpic++ \
-    ${run_code_folder}/SIMPLIFIED_run_collisionsQKE_MPI.cc ${QKE_code} ${MPI_code} \
+    ${run_code_folder}/run_collisionsQKE_MPI.cc ${QKE_code} ${MPI_code} \
     -std=c++17 -o coll
 
 if [ $? -ne 0 ]; then
@@ -47,4 +56,4 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-mpiexec -n "$N_CORES" ./coll "$MODE"
+mpiexec -n $m

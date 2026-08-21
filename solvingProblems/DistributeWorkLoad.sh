@@ -8,7 +8,7 @@ csvname="$csvpath/load_factors3.csv"
 diagnosticsCode="./solvingProblems/WorkerHeaderCreation/cal_load_factors.cc"
 diagnosticsProgram="./solvingProblems/WorkerHeaderCreation/cal_load_factors.exe"
 
-pathtovars="../base_code-main/base_arrays.cc"
+pathtovars="../base_code/base_arrays.cc"
 densitypath="./code/density.cc"
 arrpath="./code/arrays.cc"
 qkepath="./code/collisionsQKE.cc"

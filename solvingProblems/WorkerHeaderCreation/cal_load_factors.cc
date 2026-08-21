@@ -1,5 +1,5 @@
 #include "../../code/include.hh"
-#include "../../run/variable.h"
+//#include "../../run/variable.h"
 
 #include <cstdlib>
 #include <fstream>

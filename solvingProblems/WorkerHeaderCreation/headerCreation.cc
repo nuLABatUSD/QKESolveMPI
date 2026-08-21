@@ -1287,7 +1287,7 @@ void writeCoreJobsMatrix(
 )
 {
     output
-        << "inline constexpr int core_jobs["
+        << "int core_jobs["
         << total_core_count
         << "]["
         << maximum_jobs
@@ -1691,12 +1691,12 @@ int main(int argc, char* argv[])
 
         const std::filesystem::path output_filename =
             output_folder
-            / (
-                "collision_distribution_"
-                + std::to_string(number_of_cores)
-                + "_cores_"
-                + std::to_string(number_of_trapezoid_bins)
-                + "_trap.hh"
+            / ( "collision_distribution.hh"
+//                "collision_distribution_"
+//                + std::to_string(number_of_cores)
+//                + "_cores_"
+//                + std::to_string(number_of_trapezoid_bins)
+//                + "_trap.hh"
             );
 
 
