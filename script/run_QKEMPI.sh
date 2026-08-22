@@ -5,7 +5,7 @@ if [ $# -ne 3 ]; then
     exit 1
 fi
 
-. ../script/script_vars.sh 
+. ./script/script_vars.sh 
 
 rm -f coll
 
