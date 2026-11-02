@@ -2,11 +2,22 @@
 
 #include "../code/include.hh"
 
+#define DEFAULT_SIN_2THETA 0.8
+
 
 int main(int argc, char* argv[]){
+    double stt = DEFAULT_SIN_2THETA;
+    int file_index = 7;
+    
     if(argc != 8){
-        cout << "Appropriate usage ./program T_CM K_nue K_numu K_nubare K_nubarmu delta_m_squared file_header" << endl << "Abort" << endl;
-        return 1;
+        if(argc == 9){
+            stt = atof(argv[7]);
+            file_index = 8;
+        }
+        else{
+            cout << "Appropriate usage ./program T_CM K_nue K_numu K_nubare K_nubarmu delta_m_squared <opt: sin 2theta = 0.8> file_header" << endl << "Abort" << endl;
+            return 1;
+        }
     }
 
     linspace_and_gl* eps = new linspace_and_gl(0., 20., 201, 5);
@@ -15,14 +26,14 @@ int main(int argc, char* argv[]){
 
 //    density* ic = new density(eps, atof(argv[2]), atof(argv[3]));
     ic->set_T(atof(argv[1]));  
-    QKE* sim = new QKE(eps, 0.8, atof(argv[6]), ic);
+    QKE* sim = new QKE(eps, stt, atof(argv[6]), ic);
 
     sim->set_tolerance(1.e-8);
     sim->set_tiny(1.e-8 * 1.e-8);
     sim->set_ics(0., ic, 1e8);
     
-    string run_filename = string(argv[7]) + "_run.csv";
-    string eps_filename = string(argv[7]) + "_eps.csv";
+    string run_filename = string(argv[file_index]) + "_run.csv";
+    string eps_filename = string(argv[file_index]) + "_eps.csv";
     
     sim->run(1000, 1, 5e20, run_filename, true);
 
@@ -30,9 +41,9 @@ int main(int argc, char* argv[]){
     eps_file.open(eps_filename);
     
     eps_file << "# ";
-    for(int i = 1; i < 6; i++)
+    for(int i = 1; i < file_index-1; i++)
         eps_file << argv[i] << ", ";
-    eps_file << argv[6] << endl;
+    eps_file << argv[file_index-1] << endl;
     
     eps->print_csv(eps_file);
     

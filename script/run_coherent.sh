@@ -10,8 +10,14 @@
 # creates files: results/coherent_test_run.csv and results/coherent_test_eps.csv
 
 if [ $# -ne 7 ]; then
-    echo "usage: bash run_coherent Tcm k_e k_mu k_ebar k_mubar dm2 file_name"
-    exit 1
+    if [ $# -ne 8 ]; then
+        echo "usage: bash run_coherent.sh Tcm k_e k_mu k_ebar k_mubar dm2 file_name"
+        exit 1
+    else
+        args="$1 $2 $3 $4 $5 $6 $7 $8"
+    fi
+else
+    args="$1 $2 $3 $4 $5 $6 $7"
 fi
 
 . ./script/script_vars.sh 
@@ -26,4 +32,4 @@ fi
 
 g++ ${run_code_folder}/coherentsolve.cc ${coherent_code} -o coh
 
-./coh $1 $2 $3 $4 $5 $6 $7
+./coh $args
